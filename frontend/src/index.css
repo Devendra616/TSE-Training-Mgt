@@ -1,0 +1,162 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* CSS Variables for theming */
+:root {
+  /* Primary colors - Deep blue for professional look */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* Success - Green */
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+
+  /* Warning - Amber */
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+
+  /* Danger - Red */
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  /* Neutral/Gray */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Background */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  --radius: 0.5rem;
+}
+
+/* Dark mode */
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --border: #334155;
+  --input: #334155;
+  --ring: #60a5fa;
+}
+
+* {
+  @apply border-[var(--border)];
+}
+
+body {
+  @apply bg-[var(--background)] text-[var(--foreground)];
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Utility classes for compliance indicators */
+.status-compliant {
+  @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+}
+
+.status-due-soon {
+  @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400;
+}
+
+.status-overdue {
+  @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+}
+
+/* Card styles */
+.card {
+  @apply rounded-lg border bg-[var(--card)] text-[var(--card-foreground)] shadow-sm;
+}
+
+/* Button base styles */
+.btn {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:pointer-events-none disabled:opacity-50;
+}
+
+.btn-primary {
+  @apply bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] px-4 py-2;
+}
+
+.btn-secondary {
+  @apply bg-[var(--color-gray-100)] text-[var(--color-gray-900)] hover:bg-[var(--color-gray-200)] dark:bg-[var(--color-gray-800)] dark:text-[var(--color-gray-100)] dark:hover:bg-[var(--color-gray-700)] px-4 py-2;
+}
+
+.btn-danger {
+  @apply bg-[var(--color-danger-500)] text-white hover:bg-[var(--color-danger-600)] px-4 py-2;
+}
+
+/* Input styles */
+.input {
+  @apply flex h-10 w-full rounded-md border border-[var(--input)] bg-[var(--background)] px-3 py-2 text-sm ring-offset-[var(--background)] placeholder:text-[var(--color-gray-400)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/* Table styles */
+.table-container {
+  @apply overflow-x-auto rounded-lg border;
+}
+
+.data-table {
+  @apply w-full text-sm;
+}
+
+.data-table th {
+  @apply bg-[var(--color-gray-50)] dark:bg-[var(--color-gray-800)] px-4 py-3 text-left font-medium text-[var(--color-gray-600)] dark:text-[var(--color-gray-300)] border-b;
+}
+
+.data-table td {
+  @apply px-4 py-3 border-b border-[var(--color-gray-100)] dark:border-[var(--color-gray-700)];
+}
+
+.data-table tr:hover {
+  @apply bg-[var(--color-gray-50)] dark:bg-[var(--color-gray-800)]/50;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-[var(--color-gray-100)] dark:bg-[var(--color-gray-800)];
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-[var(--color-gray-300)] dark:bg-[var(--color-gray-600)] rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-[var(--color-gray-400)] dark:bg-[var(--color-gray-500)];
+}
