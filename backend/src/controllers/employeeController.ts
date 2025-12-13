@@ -10,7 +10,7 @@ import { Op } from 'sequelize';
  * GET /api/employees
  */
 export const getAllEmployees = asyncHandler(async (req: Request, res: Response) => {
-  const { status, departmentId, search, page = 1, limit = 20 } = req.query;
+  const { status, departmentId, search, page = 1, limit = 20, sortBy = 'fullName', sortOrder = 'ASC' } = req.query;
 
   const where: any = {};
   if (status) where.status = status;
@@ -23,12 +23,17 @@ export const getAllEmployees = asyncHandler(async (req: Request, res: Response) 
     ];
   }
 
+  // Validate sort field to prevent SQL injection or errors
+  const allowedSortFields = ['fullName', 'sapId', 'designation', 'createdAt', 'status'];
+  const sortField = allowedSortFields.includes(String(sortBy)) ? String(sortBy) : 'fullName';
+  const order = String(sortOrder).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
   const offset = (Number(page) - 1) * Number(limit);
 
   const { count, rows: employees } = await Employee.findAndCountAll({
     where,
     include: [{ model: Department, as: 'department', attributes: ['id', 'name'] }],
-    order: [['fullName', 'ASC']],
+    order: [[sortField, order]],
     limit: Number(limit),
     offset,
   });

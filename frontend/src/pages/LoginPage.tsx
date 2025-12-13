@@ -28,6 +28,7 @@ export function LoginPage() {
     } catch (err: any) {
       const errorMessage = err.response?.data?.error?.message || 'Login failed. Please try again.';
       setError(errorMessage);
+      console.log("toasting");
       toast.error(errorMessage, { autoClose: 10000 });
     } finally {
       setIsLoading(false);
@@ -60,7 +61,7 @@ export function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Training Management</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">NMDC Training Management</h1>
           <p className="text-primary-200">NMDC Training Compliance System</p>
         </div>
 
@@ -141,7 +142,7 @@ export function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-sm text-primary-300/50 mt-6">
-          © 2024 Mining PSU. All rights reserved.
+          © 2025 NMDC Ltd. All rights reserved.
         </p>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { getBatches, createBatch, updateBatch, deleteBatch, type Batch, type Cre
 import { getTrainings, type Training } from '@/services/trainings';
 import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
 
 const STATUS_CONFIG: Record<BatchStatus, { label: string; color: string }> = {
   scheduled: { label: 'Scheduled', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -19,6 +20,8 @@ const STATUS_CONFIG: Record<BatchStatus, { label: string; color: string }> = {
 
 export function BatchesPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const canManage = user?.role !== 'mines_manager';
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
@@ -85,10 +88,13 @@ export function BatchesPage() {
             Schedule batches, enroll employees, and mark attendance
           </p>
         </div>
-        <Button onClick={() => { setEditingBatch(null); setShowModal(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Batch
-        </Button>
+
+        {canManage && (
+          <Button onClick={() => { setEditingBatch(null); setShowModal(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Batch
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -140,20 +146,23 @@ export function BatchesPage() {
                     <span className={cn('px-2 py-0.5 rounded text-xs font-medium', STATUS_CONFIG[batch.status].color)}>
                       {STATUS_CONFIG[batch.status].label}
                     </span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEdit(batch); }}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(batch.id); }}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+
+                    {canManage && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEdit(batch); }}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(batch.id); }}
+                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">
                     {batch.training?.name}
@@ -305,7 +314,7 @@ function BatchModal({
             label="Venue"
             value={formData.venue}
             onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-            placeholder="e.g., Training Hall A"
+            placeholder="e.g., Training Hall"
             required
           />
           <Input

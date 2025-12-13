@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { getTrainings, createTraining, updateTraining, deleteTraining, type Training, type CreateTrainingData, type TrainingType } from '@/services/trainings';
+import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 
 const TRAINING_TYPES: { value: TrainingType; label: string }[] = [
@@ -16,6 +17,8 @@ const TRAINING_TYPES: { value: TrainingType; label: string }[] = [
 
 export function TrainingsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canManage = user?.role !== 'mines_manager';
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
@@ -85,10 +88,13 @@ export function TrainingsPage() {
             Manage training catalog and compliance requirements
           </p>
         </div>
-        <Button onClick={() => { setEditingTraining(null); setShowModal(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Training
-        </Button>
+
+        {canManage && (
+          <Button onClick={() => { setEditingTraining(null); setShowModal(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Training
+          </Button>
+        )}
       </div>
 
       {/* Search */}
@@ -129,20 +135,23 @@ export function TrainingsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleEdit(training)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(training.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+
+                  {canManage && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEdit(training)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(training.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">

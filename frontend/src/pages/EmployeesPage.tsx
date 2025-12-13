@@ -1,24 +1,45 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit2, Trash2, Upload, User, Building2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Upload, User, Building2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, uploadEmployeePhoto, type Employee, type CreateEmployeeData } from '@/services/employees';
 import { getDepartments, type Department } from '@/services/departments';
+import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 
 export function EmployeesPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canManage = user?.role !== 'mines_manager';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('fullName');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      setSortBy(field);
+      setSortOrder('ASC');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortBy !== field) return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />;
+    return sortOrder === 'ASC' ? 
+      <ArrowUp className="w-4 h-4 ml-1 text-blue-600" /> : 
+      <ArrowDown className="w-4 h-4 ml-1 text-blue-600" />;
+  };
+
   // Fetch employees
   const { data, isLoading, error } = useQuery({
-    queryKey: ['employees', { search, page }],
-    queryFn: () => getEmployees({ search, page, limit: 10 }),
+    queryKey: ['employees', { search, page, sortBy, sortOrder }],
+    queryFn: () => getEmployees({ search, page, limit: 10, sortBy, sortOrder }),
   });
 
   // Fetch departments for dropdown
@@ -76,10 +97,13 @@ export function EmployeesPage() {
             Manage employee records and training assignments
           </p>
         </div>
-        <Button onClick={() => { setEditingEmployee(null); setShowModal(true); }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Employee
-        </Button>
+
+        {canManage && (
+          <Button onClick={() => { setEditingEmployee(null); setShowModal(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
+          </Button>
+        )}
       </div>
 
       {/* Search and filters */}
@@ -113,12 +137,44 @@ export function EmployeesPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Employee</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">SAP ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Designation</th>
+                      <th 
+                        className="text-left py-3 px-4 font-medium text-gray-500 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        onClick={() => handleSort('fullName')}
+                      >
+                        <div className="flex items-center">
+                          Employee
+                          <SortIcon field="fullName" />
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left py-3 px-4 font-medium text-gray-500 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        onClick={() => handleSort('sapId')}
+                      >
+                        <div className="flex items-center">
+                          SAP ID
+                          <SortIcon field="sapId" />
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left py-3 px-4 font-medium text-gray-500 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        onClick={() => handleSort('designation')}
+                      >
+                        <div className="flex items-center">
+                          Designation
+                          <SortIcon field="designation" />
+                        </div>
+                      </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500">Department</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                      <th 
+                        className="text-left py-3 px-4 font-medium text-gray-500 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        onClick={() => handleSort('status')}
+                      >
+                        <div className="flex items-center">
+                          Status
+                          <SortIcon field="status" />
+                        </div>
+                      </th>
+                      {canManage && <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -160,22 +216,24 @@ export function EmployeesPage() {
                             {employee.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleEdit(employee)}
-                              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(employee.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                        {canManage && (
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleEdit(employee)}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(employee.id)}
+                                className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

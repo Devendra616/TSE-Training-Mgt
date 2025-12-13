@@ -39,6 +39,8 @@ export async function getEmployees(params?: {
   status?: string;
   departmentId?: number;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }): Promise<EmployeesResponse> {
   const response = await api.get('/employees', { params });
   return response.data.data;

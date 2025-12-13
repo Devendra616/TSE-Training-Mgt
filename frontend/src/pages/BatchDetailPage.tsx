@@ -1,19 +1,24 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Users, Plus, X, Check, Calendar, MapPin, User, Clock } from 'lucide-react';
+import { ArrowLeft, Users, Plus, X, Check, Calendar, MapPin, User, Clock, Award } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { getBatch, getBatchAttendance, enrollEmployees, removeEmployee, markAttendance, type BatchAttendanceResponse } from '@/services/batches';
+import { generateCertificates } from '@/services/certificates';
 import { searchEmployees, type Employee } from '@/services/employees';
+import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 
 export function BatchDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canManage = user?.role !== 'mines_manager';
   const [showEnrollModal, setShowEnrollModal] = useState(false);
 
   // Fetch batch details
@@ -48,6 +53,26 @@ export function BatchDetailPage() {
     },
   });
 
+  // Generate certificates mutation
+  const generateMutation = useMutation({
+    mutationFn: () => generateCertificates(Number(id)),
+    onSuccess: (data) => {
+      const { generated, skipped } = data;
+      if (generated > 0) {
+        toast.success(`Generated ${generated} new certificates`);
+      }
+      if (skipped.length > 0) {
+        toast.info(`Skipped ${skipped.length} employees (incomplete attendance or already exists)`);
+      }
+      if (generated === 0 && skipped.length === 0) {
+        toast.info('No eligible employees found for certificate generation');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to generate certificates');
+    },
+  });
+
   if (batchLoading || attendanceLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -76,10 +101,19 @@ export function BatchDetailPage() {
           </h1>
           <p className="text-gray-500 dark:text-gray-400">{batch.training?.code}</p>
         </div>
-        <Button onClick={() => setShowEnrollModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Enroll Employees
-        </Button>
+
+        {canManage && (
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => generateMutation.mutate()} isLoading={generateMutation.isPending}>
+              <Award className="w-4 h-4 mr-2" />
+              Generate Certificates
+            </Button>
+            <Button onClick={() => setShowEnrollModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Enroll Employees
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Batch Info */}
@@ -130,7 +164,7 @@ export function BatchDetailPage() {
                   ))}
                   <th className="text-center py-3 px-4 font-medium text-gray-500">Total</th>
                   <th className="text-center py-3 px-4 font-medium text-gray-500">Status</th>
-                  <th className="py-3 px-4"></th>
+                  {canManage && <th className="py-3 px-4"></th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -187,16 +221,18 @@ export function BatchDetailPage() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <button
-                        onClick={() => {
-                          if (confirm('Remove this employee from the batch?')) {
-                            removeMutation.mutate(record.employee.id);
-                          }
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      {canManage && (
+                        <button
+                          onClick={() => {
+                            if (confirm('Remove this employee from the batch?')) {
+                              removeMutation.mutate(record.employee.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -252,7 +288,11 @@ function EnrollModal({
   const enrollMutation = useMutation({
     mutationFn: () => enrollEmployees(batchId, selected.map(e => e.id)),
     onSuccess: () => {
+      toast.success('Employees enrolled successfully');
       onSuccess();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error?.message || 'Failed to enroll employees');
     },
   });
 
@@ -265,9 +305,9 @@ function EnrollModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex justify-center items-start p-4 pt-12 md:pt-20">
       <div className="absolute inset-0 bg-gray-900/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 animate-fade-in max-h-[90vh] flex flex-col">
+      <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 animate-fade-in max-h-[90vh] flex flex-col overflow-hidden">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Enroll Employees
         </h2>
@@ -282,7 +322,7 @@ function EnrollModal({
 
         {/* Selected */}
         {selected.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4 max-h-32 overflow-y-auto">
             {selected.map((emp) => (
               <span
                 key={emp.id}
@@ -298,7 +338,7 @@ function EnrollModal({
         )}
 
         {/* Results */}
-        <div className="flex-1 overflow-y-auto border rounded-lg border-gray-200 dark:border-gray-700 mb-4 min-h-[200px]">
+        <div className="flex-1 overflow-y-auto border rounded-lg border-gray-200 dark:border-gray-700 mb-4 min-h-0">
           {search.length < 2 ? (
             <div className="text-center py-8 text-gray-500 text-sm">
               Type at least 2 characters to search
@@ -327,9 +367,9 @@ function EnrollModal({
                         <User className="w-4 h-4 text-gray-400" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 dark:text-white">{emp.fullName}</div>
-                      <div className="text-xs text-gray-500">{emp.sapId} • {emp.department?.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-white truncate">{emp.fullName}</div>
+                      <div className="text-xs text-gray-500 truncate">{emp.sapId} • {emp.department?.name}</div>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-blue-600" />}
                   </button>

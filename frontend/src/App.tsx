@@ -83,7 +83,6 @@ function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        pauseOnHover
         theme="colored"
         style={{ zIndex: 99999 }}
       />

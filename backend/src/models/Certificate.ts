@@ -21,8 +21,13 @@ export enum AttendanceStatus {
 export interface CertificateAttributes {
   id: number;
   batchId: number;
+  trainingId: number;
   employeeId: number;
+  daysAttended: number;
   attendanceStatus: AttendanceStatus;
+  issueDate: Date | null;
+  validFrom: Date | null;
+  validUntil: Date | null;
   workflowStatus: WorkflowStatus;
   draftCreatedBy: number | null;
   draftCreatedAt: Date | null;
@@ -49,8 +54,13 @@ export class Certificate extends Model<CertificateAttributes, CertificateCreatio
   implements CertificateAttributes {
   declare id: number;
   declare batchId: number;
+  declare trainingId: number;
   declare employeeId: number;
+  declare daysAttended: number;
   declare attendanceStatus: AttendanceStatus;
+  declare issueDate: Date | null;
+  declare validFrom: Date | null;
+  declare validUntil: Date | null;
   declare workflowStatus: WorkflowStatus;
   declare draftCreatedBy: number | null;
   declare draftCreatedAt: Date | null;
@@ -79,6 +89,14 @@ Certificate.init(
         key: 'id',
       },
     },
+    trainingId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'trainings',
+        key: 'id',
+      },
+    },
     employeeId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -86,6 +104,11 @@ Certificate.init(
         model: 'employees',
         key: 'id',
       },
+    },
+    daysAttended: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
     },
     attendanceStatus: {
       type: DataTypes.ENUM(...Object.values(AttendanceStatus)),
@@ -132,6 +155,18 @@ Certificate.init(
     },
     certificatePath: {
       type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    issueDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    validFrom: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    validUntil: {
+      type: DataTypes.DATEONLY,
       allowNull: true,
     },
     nextDueDate: {

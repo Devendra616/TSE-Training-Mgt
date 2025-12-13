@@ -61,10 +61,12 @@ function setupAssociations(): void {
 
   // Certificate associations
   Certificate.belongsTo(Batch, { foreignKey: 'batchId', as: 'batch' });
+  Certificate.belongsTo(Training, { foreignKey: 'trainingId', as: 'training' });
   Certificate.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
   Certificate.belongsTo(User, { foreignKey: 'draftCreatedBy', as: 'draftCreator' });
   Certificate.belongsTo(User, { foreignKey: 'approvedBy', as: 'approver' });
   Batch.hasMany(Certificate, { foreignKey: 'batchId', as: 'certificates' });
+  Training.hasMany(Certificate, { foreignKey: 'trainingId', as: 'certificates' });
   Employee.hasMany(Certificate, { foreignKey: 'employeeId', as: 'certificates' });
 
   // Notification associations
