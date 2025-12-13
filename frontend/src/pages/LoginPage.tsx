@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -27,27 +28,24 @@ export function LoginPage() {
     } catch (err: any) {
       const errorMessage = err.response?.data?.error?.message || 'Login failed. Please try again.';
       setError(errorMessage);
-      // Keep error visible for 5 seconds
-      setTimeout(() => {
-        setError((currentError) => currentError === errorMessage ? '' : currentError);
-      }, 5000);
+      toast.error(errorMessage, { autoClose: 10000 });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900 p-4">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Logo and title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 mb-4 shadow-lg">
             <svg
               className="w-8 h-8 text-white"
               fill="none"
@@ -63,7 +61,7 @@ export function LoginPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Training Management</h1>
-          <p className="text-blue-200">Mining PSU Training Compliance System</p>
+          <p className="text-primary-200">NMDC Training Compliance System</p>
         </div>
 
         {/* Login card */}
@@ -105,7 +103,7 @@ export function LoginPage() {
                 type="submit"
                 size="lg"
                 isLoading={isLoading}
-                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                className="w-full bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800"
               >
                 Sign in
               </Button>
@@ -113,26 +111,26 @@ export function LoginPage() {
 
             {/* Demo credentials */}
             <div className="mt-8 pt-6 border-t border-white/10">
-              <p className="text-center text-sm text-blue-200 mb-3">Demo Credentials</p>
+              <p className="text-center text-sm text-primary-200 mb-3">Demo Credentials</p>
               <div className="grid grid-cols-1 gap-2 text-xs">
                 <button
                   type="button"
                   onClick={() => { setEmail('admin@mining.com'); setPassword('password123'); }}
-                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-blue-100 text-left transition-colors"
+                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-primary-100 text-left transition-colors"
                 >
                   <span className="font-medium">Admin:</span> admin@mining.com
                 </button>
                 <button
                   type="button"
                   onClick={() => { setEmail('officer@mining.com'); setPassword('password123'); }}
-                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-blue-100 text-left transition-colors"
+                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-primary-100 text-left transition-colors"
                 >
                   <span className="font-medium">Training Officer:</span> officer@mining.com
                 </button>
                 <button
                   type="button"
                   onClick={() => { setEmail('manager@mining.com'); setPassword('password123'); }}
-                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-blue-100 text-left transition-colors"
+                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-primary-100 text-left transition-colors"
                 >
                   <span className="font-medium">Mines Manager:</span> manager@mining.com
                 </button>
@@ -142,7 +140,7 @@ export function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-sm text-blue-300/50 mt-6">
+        <p className="text-center text-sm text-primary-300/50 mt-6">
           © 2024 Mining PSU. All rights reserved.
         </p>
       </div>

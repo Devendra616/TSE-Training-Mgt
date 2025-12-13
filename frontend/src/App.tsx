@@ -12,8 +12,11 @@ import { ApprovalsPage } from './pages/ApprovalsPage';
 import { MigrationPage } from './pages/MigrationPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { MainLayout } from './components/layout/MainLayout';
+import { SettingsPage } from './pages/SettingsPage';
 import { useAuthStore } from './store/authStore';
 import { getCurrentUser } from './services/auth';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +73,20 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        pauseOnHover
+        theme="colored"
+        style={{ zIndex: 99999 }}
+      />
       <BrowserRouter>
         <AuthInitializer>
           <Routes>
@@ -91,7 +108,7 @@ function App() {
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="migration" element={<MigrationPage />} />
-              <Route path="settings" element={<PlaceholderPage title="Settings" description="System settings" />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

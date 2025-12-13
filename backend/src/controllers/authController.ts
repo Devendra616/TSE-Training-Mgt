@@ -157,7 +157,7 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   // Verify current password
   const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!isValidPassword) {
-    throw new AuthError('Current password is incorrect');
+    throw new ValidationError('Current password is incorrect');
   }
 
   // Hash new password

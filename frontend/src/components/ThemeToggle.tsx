@@ -42,7 +42,7 @@ export function ThemeToggle() {
                   className={cn(
                     'flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors',
                     theme === t.value
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   )}
                 >

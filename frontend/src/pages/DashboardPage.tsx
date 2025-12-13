@@ -28,7 +28,7 @@ export function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
       </div>
     );
   }
@@ -79,7 +79,7 @@ export function DashboardPage() {
 
   const getColorClasses = (color: string) => {
     const colors: Record<string, string> = {
-      blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      blue: 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400',
       indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
       amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
       red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
@@ -228,7 +228,7 @@ export function DashboardPage() {
             </h2>
             <button
               onClick={() => navigate('/certificates')}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              className="text-sm text-primary-600 hover:text-primary-700"
             >
               View all →
             </button>
