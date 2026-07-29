@@ -1,11 +1,11 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Enums
 export enum UserRole {
-  ADMIN = 'admin',
-  TRAINING_OFFICER = 'training_officer',
-  MINES_MANAGER = 'mines_manager',
+  ADMIN = "admin",
+  TRAINING_OFFICER = "training_officer",
+  MINES_MANAGER = "mines_manager",
 }
 
 // Attributes interface
@@ -24,13 +24,24 @@ export interface UserAttributes {
 }
 
 // Creation attributes (optional fields for creation)
-export interface UserCreationAttributes
-  extends Optional<UserAttributes, 'id' | 'employeeId' | 'signatureUrl' | 'isActive' | 'lastLoginAt' | 'createdAt' | 'updatedAt'> {}
+export interface UserCreationAttributes extends Optional<
+  UserAttributes,
+  | "id"
+  | "employeeId"
+  | "signatureUrl"
+  | "isActive"
+  | "lastLoginAt"
+  | "createdAt"
+  | "updatedAt"
+> {}
 
 /**
  * User model - System login accounts
  */
-export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+export class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
+{
   declare id: number;
   declare email: string;
   declare passwordHash: string;
@@ -54,10 +65,10 @@ User.init(
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true,
       validate: {
         isEmail: true,
       },
+      unique: true,
     },
     passwordHash: {
       type: DataTypes.STRING(255),
@@ -76,8 +87,8 @@ User.init(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'employees',
-        key: 'id',
+        model: "employees",
+        key: "id",
       },
     },
     signatureUrl: {
@@ -106,14 +117,10 @@ User.init(
   },
   {
     sequelize,
-    tableName: 'users',
+    tableName: "users",
     timestamps: true,
-    indexes: [
-      { fields: ['email'], unique: true },
-      { fields: ['role'] },
-      { fields: ['is_active'] },
-    ],
-  }
+    indexes: [{ fields: ["role"] }, { fields: ["is_active"] }],
+  },
 );
 
 export default User;

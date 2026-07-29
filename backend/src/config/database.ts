@@ -1,18 +1,18 @@
-import { Sequelize } from 'sequelize';
-import { config } from './index.js';
-import { logger } from '../utils/logger.js';
+import { Sequelize } from "sequelize";
+import { config } from "./index.js";
+import { logger } from "../utils/logger.js";
 
 /**
  * PostgreSQL database connection using Sequelize ORM
  */
 export const sequelize = new Sequelize({
-  dialect: 'postgres',
+  dialect: "postgres",
   host: config.database.host,
   port: config.database.port,
   database: config.database.name,
   username: config.database.user,
   password: config.database.password,
-  logging: config.env === 'development' ? (msg) => logger.debug(msg) : false,
+  logging: config.env === "development" ? (msg) => logger.debug(msg) : false,
   pool: {
     max: 10,
     min: 0,
@@ -32,22 +32,9 @@ export const sequelize = new Sequelize({
 export async function connectDatabase(): Promise<void> {
   try {
     await sequelize.authenticate();
-    logger.info('Database connection established successfully');
+    logger.info("Database connection established successfully");
   } catch (error) {
-    logger.error('Unable to connect to database:', error);
-    throw error;
-  }
-}
-
-/**
- * Sync database models (use migrations in production)
- */
-export async function syncDatabase(force = false): Promise<void> {
-  try {
-    await sequelize.sync({ force, alter: config.env === 'development' });
-    logger.info('Database synchronized');
-  } catch (error) {
-    logger.error('Database sync failed:', error);
+    logger.error("Unable to connect to database:", error);
     throw error;
   }
 }

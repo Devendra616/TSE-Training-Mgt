@@ -145,6 +145,8 @@ export function CertificatesPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {certificates?.map((cert) => {
                     const StatusIcon = STATUS_CONFIG[cert.workflowStatus].icon;
+                    const hasActions = cert.workflowStatus === 'approved';
+
                     return (
                       <tr key={cert.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         {(statusFilter === 'draft' || statusFilter === '') && (
@@ -170,20 +172,28 @@ export function CertificatesPage() {
                         <td className="py-3 px-4">
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
-                              {cert.employee?.fullName}
+                              {cert.employee?.fullName || 'Unknown Employee'}
                             </div>
                             <div className="text-xs text-gray-500">{cert.employee?.sapId}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div>
-                            <div className="text-gray-900 dark:text-white">{cert.training?.name}</div>
+                            <div className="text-gray-900 dark:text-white">
+                              {cert.training?.name || 'Unknown Training'}
+                            </div>
                             <div className="text-xs text-gray-500">{cert.training?.code}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                          {format(new Date(cert.validFrom), 'MMM d, yyyy')} -<br />
-                          {format(new Date(cert.validUntil), 'MMM d, yyyy')}
+                          {cert.validFrom && cert.validUntil ? (
+                            <>
+                              {format(new Date(cert.validFrom), 'MMM d, yyyy')} -<br />
+                              {format(new Date(cert.validUntil), 'MMM d, yyyy')}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 italic">N/A</span>
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <span className={cn(
@@ -201,10 +211,12 @@ export function CertificatesPage() {
                           )}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          {cert.workflowStatus === 'approved' && (
-                            <button className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600">
+                          {hasActions ? (
+                            <button className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600" title="Download Certificate">
                               <Download className="w-4 h-4" />
                             </button>
+                          ) : (
+                            <span className="text-gray-300">-</span>
                           )}
                         </td>
                       </tr>

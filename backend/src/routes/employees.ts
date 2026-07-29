@@ -99,7 +99,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  authorize(UserRole.ADMIN),
+  authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [param('id').isInt().withMessage('Valid employee ID is required')],
   validateRequest,
   deleteEmployee

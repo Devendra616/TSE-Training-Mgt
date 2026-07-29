@@ -42,7 +42,7 @@ router.get(
  */
 router.post(
   '/',
-  authorize(UserRole.ADMIN),
+  authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
     body('name').notEmpty().trim().withMessage('Training name is required'),
     body('code').notEmpty().trim().withMessage('Training code is required'),
@@ -64,7 +64,7 @@ router.post(
  */
 router.put(
   '/:id',
-  authorize(UserRole.ADMIN),
+  authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
     param('id').isInt().withMessage('Valid training ID is required'),
     body('name').optional().notEmpty().trim(),
@@ -85,7 +85,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  authorize(UserRole.ADMIN),
+  authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [param('id').isInt().withMessage('Valid training ID is required')],
   validateRequest,
   deleteTraining

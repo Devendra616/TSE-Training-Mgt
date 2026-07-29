@@ -1,10 +1,10 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Enums
 export enum EmployeeStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
+  ACTIVE = "active",
+  INACTIVE = "inactive",
 }
 
 // Attributes interface
@@ -20,14 +20,18 @@ export interface EmployeeAttributes {
   updatedAt: Date;
 }
 
-export interface EmployeeCreationAttributes
-  extends Optional<EmployeeAttributes, 'id' | 'photoUrl' | 'status' | 'createdAt' | 'updatedAt'> {}
+export interface EmployeeCreationAttributes extends Optional<
+  EmployeeAttributes,
+  "id" | "photoUrl" | "status" | "createdAt" | "updatedAt"
+> {}
 
 /**
  * Employee model - Employee records
  */
-export class Employee extends Model<EmployeeAttributes, EmployeeCreationAttributes>
-  implements EmployeeAttributes {
+export class Employee
+  extends Model<EmployeeAttributes, EmployeeCreationAttributes>
+  implements EmployeeAttributes
+{
   declare id: number;
   declare sapId: string;
   declare fullName: string;
@@ -63,8 +67,8 @@ Employee.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'departments',
-        key: 'id',
+        model: "departments",
+        key: "id",
       },
     },
     photoUrl: {
@@ -89,15 +93,14 @@ Employee.init(
   },
   {
     sequelize,
-    tableName: 'employees',
+    tableName: "employees",
     timestamps: true,
     indexes: [
-      { fields: ['sap_id'], unique: true },
-      { fields: ['department_id'] },
-      { fields: ['status'] },
-      { fields: ['full_name'] },
+      { fields: ["department_id"] },
+      { fields: ["status"] },
+      { fields: ["full_name"] },
     ],
-  }
+  },
 );
 
 export default Employee;

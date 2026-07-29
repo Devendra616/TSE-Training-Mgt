@@ -18,7 +18,7 @@ export function BatchDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const canManage = user?.role !== 'mines_manager';
+  const canManage = ['admin', 'training_officer'].includes(user?.role || '');
   const [showEnrollModal, setShowEnrollModal] = useState(false);
 
   // Fetch batch details

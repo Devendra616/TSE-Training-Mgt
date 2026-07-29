@@ -1,12 +1,12 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Training type enum - used for certificate numbering
 export enum TrainingType {
-  BASIC = 'BASIC',
-  REF = 'REF',     // Refresher
-  COJ = 'COJ',     // Change of Job
-  OTHR = 'OTHR',   // Other
+  BASIC = "BASIC",
+  REF = "REF", // Refresher
+  COJ = "COJ", // Change of Job
+  OTHR = "OTHR", // Other
 }
 
 // Attributes interface
@@ -23,14 +23,18 @@ export interface TrainingAttributes {
   updatedAt: Date;
 }
 
-export interface TrainingCreationAttributes
-  extends Optional<TrainingAttributes, 'id' | 'description' | 'createdAt' | 'updatedAt'> {}
+export interface TrainingCreationAttributes extends Optional<
+  TrainingAttributes,
+  "id" | "description" | "createdAt" | "updatedAt"
+> {}
 
 /**
  * Training model - Training catalog/master
  */
-export class Training extends Model<TrainingAttributes, TrainingCreationAttributes>
-  implements TrainingAttributes {
+export class Training
+  extends Model<TrainingAttributes, TrainingCreationAttributes>
+  implements TrainingAttributes
+{
   declare id: number;
   declare name: string;
   declare code: string;
@@ -99,14 +103,10 @@ Training.init(
   },
   {
     sequelize,
-    tableName: 'trainings',
+    tableName: "trainings",
     timestamps: true,
-    indexes: [
-      { fields: ['code'], unique: true },
-      { fields: ['training_type'] },
-      { fields: ['is_mandatory'] },
-    ],
-  }
+    indexes: [{ fields: ["training_type"] }, { fields: ["is_mandatory"] }],
+  },
 );
 
 export default Training;

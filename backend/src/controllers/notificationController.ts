@@ -76,6 +76,27 @@ export const markAllAsRead = asyncHandler(async (req: Request, res: Response) =>
 });
 
 /**
+ * Helper to generate link from related entity
+ */
+function generateLink(type?: string, id?: number): string | null {
+  if (!type || !id) return null;
+  
+  switch (type) {
+    case 'certificate':
+    case 'certificates':
+      return '/certificates'; // or /certificates/${id} but list view is safer for now or if bulk
+    case 'batch': 
+      return `/batches/${id}`;
+    case 'training':
+      return `/trainings/${id}`;
+    case 'employee':
+      return `/employees/${id}`;
+    default:
+      return null;
+  }
+}
+
+/**
  * Create notification (internal use)
  */
 export async function createNotification(
@@ -86,13 +107,14 @@ export async function createNotification(
   relatedType?: string,
   relatedId?: number
 ): Promise<Notification> {
+  const link = generateLink(relatedType, relatedId);
+  
   return Notification.create({
     userId,
     type,
     title,
     message,
-    relatedType,
-    relatedId,
+    link,
   });
 }
 
@@ -107,14 +129,15 @@ export async function broadcastNotification(
   relatedType?: string,
   relatedId?: number
 ): Promise<void> {
+  const link = generateLink(relatedType, relatedId);
+
   await Notification.bulkCreate(
     userIds.map((userId) => ({
       userId,
       type,
       title,
       message,
-      relatedType,
-      relatedId,
+      link,
     }))
   );
 }

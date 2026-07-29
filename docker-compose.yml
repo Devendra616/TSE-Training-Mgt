@@ -5,15 +5,15 @@ services:
     container_name: training-mgt-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: training_mgt
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-training_mgt}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,7 +27,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -49,17 +49,17 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      FRONTEND_URL: http://localhost:5173
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: training_mgt
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_NAME: ${DB_NAME:-training_mgt}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-nmdctse}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
-      JWT_EXPIRES_IN: 1h
-      COMPLIANCE_WARNING_DAYS: 30
+      JWT_SECRET: ${JWT_SECRET:-9fC7R#v3P!xAqL2mZ8@WkT$D6N^hS4eB}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      COMPLIANCE_WARNING_DAYS: ${COMPLIANCE_WARNING_DAYS:-30}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
@@ -71,14 +71,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
     container_name: training-mgt-frontend
     restart: unless-stopped
     depends_on:
       - backend
     ports:
       - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:3000
 
   # Nginx Reverse Proxy (optional, for production)
   nginx:

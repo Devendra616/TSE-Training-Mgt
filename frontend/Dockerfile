@@ -9,6 +9,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Build args
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build for production
 RUN npm run build
 
@@ -16,4 +20,4 @@ RUN npm run build
 EXPOSE 5173
 
 # Serve with preview mode
-CMD ["npm", "run", "preview", "--", "--host"]
+CMD ["npm", "run", "preview", "--", "--host", "--port", "5173"]

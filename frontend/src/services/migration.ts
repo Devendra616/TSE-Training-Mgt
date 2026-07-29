@@ -30,6 +30,7 @@ export async function uploadMigrationFile(file: File): Promise<{
   fileUrl: string;
   filename: string;
   originalName: string;
+  mimeType: string;
 }> {
   const formData = new FormData();
   formData.append('file', file);

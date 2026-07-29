@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit2, Trash2, Upload, User, Building2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +13,7 @@ import { cn } from '@/utils/cn';
 export function EmployeesPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const canManage = user?.role !== 'mines_manager';
+  const canManage = ['admin', 'training_officer'].includes(user?.role || '');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState('fullName');
@@ -71,9 +72,26 @@ export function EmployeesPage() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: deleteEmployee,
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(
+        <div className="flex items-center justify-between gap-4">
+          <span>Employee deactivated</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 px-3 text-xs"
+            onClick={() => updateMutation.mutate({ id, data: { status: 'active' } })}
+          >
+            Undo
+          </Button>
+        </div>,
+        { autoClose: 5000 }
+      );
     },
+    onError: () => {
+      toast.error('Failed to deactivate employee');
+    }
   });
 
   const handleEdit = (employee: Employee) => {
@@ -82,9 +100,7 @@ export function EmployeesPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to deactivate this employee?')) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -225,12 +241,16 @@ export function EmployeesPage() {
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              <button
-                                onClick={() => handleDelete(employee.id)}
-                                className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {employee.status !== 'inactive' ? (
+                                <button
+                                  onClick={() => handleDelete(employee.id)}
+                                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <div className="w-7 h-7" />
+                              )}
                             </div>
                           </td>
                         )}

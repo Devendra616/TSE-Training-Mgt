@@ -1,41 +1,58 @@
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Upload, FileText, CheckCircle, AlertTriangle, X, Search, Save } from 'lucide-react';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
-import { uploadMigrationFile, checkDuplicate, migrateCertificate, getMigrationStats, type MigrateCertificateData } from '@/services/migration';
-import { searchEmployees, type Employee } from '@/services/employees';
-import { getTrainings, type Training } from '@/services/trainings';
-import { cn } from '@/utils/cn';
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  X,
+  Search,
+  Save,
+} from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import {
+  uploadMigrationFile,
+  checkDuplicate,
+  migrateCertificate,
+  getMigrationStats,
+  type MigrateCertificateData,
+} from "@/services/migration";
+import { searchEmployees, type Employee } from "@/services/employees";
+import { getTrainings, type Training } from "@/services/trainings";
+import { cn } from "@/utils/cn";
 
 export function MigrationPage() {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<Partial<MigrateCertificateData>>({
-    issueDate: format(new Date(), 'yyyy-MM-dd'),
+    issueDate: format(new Date(), "yyyy-MM-dd"),
   });
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+    null,
+  );
+  const [employeeSearch, setEmployeeSearch] = useState("");
 
   // Fetch data
   const { data: stats } = useQuery({
-    queryKey: ['migrationStats'],
+    queryKey: ["migrationStats"],
     queryFn: getMigrationStats,
   });
 
   const { data: trainings } = useQuery({
-    queryKey: ['trainings'],
+    queryKey: ["trainings"],
     queryFn: () => getTrainings(),
   });
 
   const { data: employeeResults } = useQuery({
-    queryKey: ['employeeSearch', employeeSearch],
+    queryKey: ["employeeSearch", employeeSearch],
     queryFn: () => searchEmployees(employeeSearch),
     enabled: employeeSearch.length >= 2,
   });
@@ -45,6 +62,7 @@ export function MigrationPage() {
     mutationFn: uploadMigrationFile,
     onSuccess: (data) => {
       setFileUrl(data.fileUrl);
+      setMimeType(data.mimeType);
     },
   });
 
@@ -53,7 +71,7 @@ export function MigrationPage() {
     mutationFn: checkDuplicate,
     onSuccess: (data) => {
       if (data.isDuplicate) {
-        setDuplicateWarning(data.reason || 'Duplicate found');
+        setDuplicateWarning(data.reason || "Duplicate found");
       } else {
         setDuplicateWarning(null);
       }
@@ -64,13 +82,14 @@ export function MigrationPage() {
   const migrateMutation = useMutation({
     mutationFn: migrateCertificate,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['migrationStats'] });
+      queryClient.invalidateQueries({ queryKey: ["migrationStats"] });
       // Reset form
-      setFormData({ issueDate: format(new Date(), 'yyyy-MM-dd') });
+      setFormData({ issueDate: format(new Date(), "yyyy-MM-dd") });
       setSelectedEmployee(null);
-      setEmployeeSearch('');
+      setEmployeeSearch("");
       setFile(null);
       setFileUrl(null);
+      setMimeType(null);
       setDuplicateWarning(null);
     },
   });
@@ -96,8 +115,8 @@ export function MigrationPage() {
   const handleEmployeeSelect = (employee: Employee) => {
     setSelectedEmployee(employee);
     setFormData({ ...formData, employeeId: employee.id });
-    setEmployeeSearch('');
-    
+    setEmployeeSearch("");
+
     // Check for duplicates
     if (formData.trainingId && formData.issueDate) {
       checkDuplicateMutation.mutate({
@@ -110,7 +129,7 @@ export function MigrationPage() {
 
   const handleTrainingChange = (trainingId: number) => {
     setFormData({ ...formData, trainingId });
-    
+
     // Check for duplicates
     if (selectedEmployee && formData.issueDate) {
       checkDuplicateMutation.mutate({
@@ -141,7 +160,9 @@ export function MigrationPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Migration Tool</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Migration Tool
+          </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Digitize legacy certificates from PDFs and images
           </p>
@@ -177,12 +198,17 @@ export function MigrationPage() {
                   className="hidden"
                   id="file-upload"
                 />
-                <label htmlFor="file-upload" className="cursor-pointer text-center">
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer text-center"
+                >
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400 font-medium">
                     Drop file here or click to upload
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">PDF, JPG, PNG up to 10MB</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    PDF, JPG, PNG up to 10MB
+                  </p>
                 </label>
               </div>
             ) : (
@@ -193,22 +219,26 @@ export function MigrationPage() {
                     <span className="text-sm font-medium">{file?.name}</span>
                   </div>
                   <button
-                    onClick={() => { setFile(null); setFileUrl(null); }}
+                    onClick={() => {
+                      setFile(null);
+                      setFileUrl(null);
+                    }}
                     className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                  {file?.type === 'application/pdf' ? (
+                  {mimeType === "application/pdf" ||
+                  file?.type === "application/pdf" ? (
                     <iframe
-                      src={`${import.meta.env.VITE_API_URL || ''}${fileUrl}`}
+                      src={`${import.meta.env.VITE_API_URL || ""}${fileUrl}`}
                       className="w-full h-full"
                       title="PDF Preview"
                     />
                   ) : (
                     <img
-                      src={`${import.meta.env.VITE_API_URL || ''}${fileUrl}`}
+                      src={`${import.meta.env.VITE_API_URL || ""}${fileUrl}`}
                       alt="Certificate preview"
                       className="w-full h-full object-contain"
                     />
@@ -233,7 +263,9 @@ export function MigrationPage() {
                 <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                   <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Potential Duplicate</span>
+                    <span className="text-sm font-medium">
+                      Potential Duplicate
+                    </span>
                   </div>
                   <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
                     {duplicateWarning}
@@ -249,8 +281,12 @@ export function MigrationPage() {
                 {selectedEmployee ? (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                     <div>
-                      <div className="font-medium">{selectedEmployee.fullName}</div>
-                      <div className="text-sm text-gray-500">{selectedEmployee.sapId}</div>
+                      <div className="font-medium">
+                        {selectedEmployee.fullName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {selectedEmployee.sapId}
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -278,7 +314,9 @@ export function MigrationPage() {
                             className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
                           >
                             <div className="font-medium">{emp.fullName}</div>
-                            <div className="text-sm text-gray-500">{emp.sapId}</div>
+                            <div className="text-sm text-gray-500">
+                              {emp.sapId}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -293,7 +331,7 @@ export function MigrationPage() {
                   Training *
                 </label>
                 <select
-                  value={formData.trainingId || ''}
+                  value={formData.trainingId || ""}
                   onChange={(e) => handleTrainingChange(Number(e.target.value))}
                   className="flex h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
@@ -310,8 +348,13 @@ export function MigrationPage() {
               {/* Certificate number */}
               <Input
                 label="Certificate Number (optional)"
-                value={formData.certificateNumber || ''}
-                onChange={(e) => setFormData({ ...formData, certificateNumber: e.target.value })}
+                value={formData.certificateNumber || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    certificateNumber: e.target.value,
+                  })
+                }
                 placeholder="e.g., BASIC/2024/001"
               />
 
@@ -320,31 +363,44 @@ export function MigrationPage() {
                 <Input
                   label="Issue Date *"
                   type="date"
-                  value={formData.issueDate || ''}
-                  onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
+                  value={formData.issueDate || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, issueDate: e.target.value })
+                  }
                   required
                 />
                 <Input
                   label="Days Attended"
                   type="number"
                   min={1}
-                  value={formData.daysAttended || ''}
-                  onChange={(e) => setFormData({ ...formData, daysAttended: Number(e.target.value) })}
+                  value={formData.daysAttended || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      daysAttended: Number(e.target.value),
+                    })
+                  }
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Valid From"
+                  label="Start Date *"
                   type="date"
-                  value={formData.validFrom || ''}
-                  onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
+                  value={formData.validFrom || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, validFrom: e.target.value })
+                  }
+                  required
                 />
                 <Input
-                  label="Valid Until"
+                  label="End Date *"
                   type="date"
-                  value={formData.validUntil || ''}
-                  onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+                  value={formData.validUntil || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, validUntil: e.target.value })
+                  }
+                  required
                 />
               </div>
 
@@ -354,8 +410,10 @@ export function MigrationPage() {
                   Notes
                 </label>
                 <textarea
-                  value={formData.notes || ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  value={formData.notes || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                   rows={2}
                   className="flex w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Any additional notes..."

@@ -18,7 +18,7 @@ export const uploadMigrationFile = asyncHandler(async (req: Request, res: Respon
     throw new ValidationError('File is required');
   }
 
-  const fileUrl = `/uploads/migration/${req.file.filename}`;
+  const fileUrl = `/uploads/certificates/${req.file.filename}`;
 
   logUserAction(req.user!.id, 'upload_migration_file', 'migration', 0, {
     filename: req.file.filename,

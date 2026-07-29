@@ -21,7 +21,7 @@ const STATUS_CONFIG: Record<BatchStatus, { label: string; color: string }> = {
 export function BatchesPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const canManage = user?.role !== 'mines_manager';
+  const canManage = ['admin', 'training_officer'].includes(user?.role || '');
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);

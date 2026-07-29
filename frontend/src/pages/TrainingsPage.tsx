@@ -18,7 +18,7 @@ const TRAINING_TYPES: { value: TrainingType; label: string }[] = [
 export function TrainingsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const canManage = user?.role !== 'mines_manager';
+  const canManage = ['admin', 'training_officer'].includes(user?.role || '');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);

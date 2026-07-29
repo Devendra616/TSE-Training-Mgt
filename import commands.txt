@@ -1,0 +1,13 @@
+
+CREATE TEMP TABLE employees_import (    empid text,    sap text,    empname text,    desig text,    grade text,    scategory text,    sex text,    department text,    deptcode integer);
+
+COPY employees_import FROM '/tmp/employees.csv' WITH (    FORMAT csv,    HEADER true);
+
+INSERT INTO employees (    sap_id,    full_name,    designation,    department_id,    status,    created_at,    updated_at) SELECT    sap,    empname,    desig,    deptcode,    'active',    NOW(),    NOW() FROM employees_import;
+
+docker ps
+docker exec -it 1489bef7bb25 psql -U postgres -d training_mgt
+\dt to view tables
+\d employees table schema
+
+

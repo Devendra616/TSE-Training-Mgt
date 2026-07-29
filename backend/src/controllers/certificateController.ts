@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { Certificate, CertSequence, BatchEmployee, Batch, Training, Employee, Attendance, WorkflowStatus, CompletionStatus } from '../models/index.js';
+import { Certificate, CertSequence, BatchEmployee, Batch, Training, Employee, Attendance, WorkflowStatus, CompletionStatus, UserRole, NotificationType } from '../models/index.js';
+import { notifyRole, createNotification } from './notificationController.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors.js';
 import { logUserAction } from '../utils/logger.js';
@@ -194,7 +195,12 @@ export const generateCertificates = asyncHandler(async (req: Request, res: Respo
 export const submitForApproval = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const certificate = await Certificate.findByPk(id);
+  const certificate = await Certificate.findByPk(id, {
+    include: [
+      { model: Employee, as: 'employee' },
+      { model: Training, as: 'training' },
+    ],
+  });
   if (!certificate) {
     throw new NotFoundError('Certificate');
   }
@@ -208,6 +214,19 @@ export const submitForApproval = asyncHandler(async (req: Request, res: Response
     submittedAt: new Date(),
     submittedBy: req.user!.id,
   });
+
+  // Notify Mines Manager
+  const employeeName = (certificate as any).employee?.fullName || 'Employee';
+  const trainingName = (certificate as any).training?.name || 'Training';
+
+  await notifyRole(
+    UserRole.MINES_MANAGER,
+    NotificationType.APPROVAL_REQUEST,
+    'Certificate Approval Request',
+    `${employeeName} has completed ${trainingName} and requires certification approval.`,
+    'certificate',
+    certificate.id
+  );
 
   logUserAction(req.user!.id, 'submit_for_approval', 'certificates', certificate.id);
 
@@ -243,6 +262,17 @@ export const bulkSubmitForApproval = asyncHandler(async (req: Request, res: Resp
   );
 
   logUserAction(req.user!.id, 'bulk_submit_for_approval', 'certificates', 0, { count: result[0] });
+
+  // Notify Mines Manager
+  if (result[0] > 0) {
+    await notifyRole(
+      UserRole.MINES_MANAGER,
+      NotificationType.APPROVAL_REQUEST,
+      'Bulk Certificate Approval Request',
+      `${result[0]} certificates have been submitted for approval.`,
+      'certificates'
+    );
+  }
 
   res.json({
     success: true,
@@ -282,6 +312,21 @@ export const approveCertificate = asyncHandler(async (req: Request, res: Respons
   });
 
   logUserAction(req.user!.id, 'approve_certificate', 'certificates', certificate.id, { certNumber });
+
+  // Notify Draft Creator
+  if (certificate.draftCreatedBy) {
+    const employeeName = (certificate as any).employee?.fullName || 'Employee';
+    const trainingName = (certificate as any).training?.name || 'Training';
+    
+    await createNotification(
+      certificate.draftCreatedBy,
+      NotificationType.APPROVAL_RESULT,
+      'Certificate Approved',
+      `Certificate for ${employeeName} (${trainingName}) has been approved.`,
+      'certificate',
+      certificate.id
+    );
+  }
 
   res.json({
     success: true,
@@ -327,6 +372,17 @@ export const bulkApprove = asyncHandler(async (req: Request, res: Response) => {
 
   logUserAction(req.user!.id, 'bulk_approve', 'certificates', 0, { count: approved.length });
 
+  // Notify Training Officers
+  if (approved.length > 0) {
+    await notifyRole(
+      UserRole.TRAINING_OFFICER,
+      NotificationType.APPROVAL_RESULT,
+      'Bulk Certificates Approved',
+      `${approved.length} certificates have been successfully approved.`,
+      'certificates'
+    );
+  }
+
   res.json({
     success: true,
     data: { approved },
@@ -345,7 +401,12 @@ export const rejectCertificate = asyncHandler(async (req: Request, res: Response
     throw new ValidationError('Rejection reason is required');
   }
 
-  const certificate = await Certificate.findByPk(id);
+  const certificate = await Certificate.findByPk(id, {
+    include: [
+      { model: Employee, as: 'employee' },
+      { model: Training, as: 'training' },
+    ],
+  });
   if (!certificate) {
     throw new NotFoundError('Certificate');
   }
@@ -363,6 +424,21 @@ export const rejectCertificate = asyncHandler(async (req: Request, res: Response
 
   logUserAction(req.user!.id, 'reject_certificate', 'certificates', certificate.id, { reason });
 
+  // Notify Draft Creator
+  if (certificate.draftCreatedBy) {
+    const employeeName = (certificate as any).employee?.fullName || 'Employee';
+    const trainingName = (certificate as any).training?.name || 'Training';
+
+    await createNotification(
+      certificate.draftCreatedBy,
+      NotificationType.APPROVAL_RESULT,
+      'Certificate Rejected',
+      `Certificate for ${employeeName} (${trainingName}) was rejected. Reason: ${reason}`,
+      'certificate',
+      certificate.id
+    );
+  }
+
   res.json({
     success: true,
     data: { certificate },
@@ -376,7 +452,12 @@ export const rejectCertificate = asyncHandler(async (req: Request, res: Response
 export const resubmitCertificate = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const certificate = await Certificate.findByPk(id);
+  const certificate = await Certificate.findByPk(id, {
+    include: [
+      { model: Employee, as: 'employee' },
+      { model: Training, as: 'training' },
+    ],
+  });
   if (!certificate) {
     throw new NotFoundError('Certificate');
   }
@@ -395,6 +476,19 @@ export const resubmitCertificate = asyncHandler(async (req: Request, res: Respon
   });
 
   logUserAction(req.user!.id, 'resubmit_certificate', 'certificates', certificate.id);
+
+  // Notify Mines Manager
+  const employeeName = (certificate as any).employee?.fullName || 'Employee';
+  const trainingName = (certificate as any).training?.name || 'Training';
+
+  await notifyRole(
+    UserRole.MINES_MANAGER,
+    NotificationType.APPROVAL_REQUEST,
+    'Certificate Resubmitted',
+    `${employeeName} has completed ${trainingName} and requires certification approval (Resubmission).`,
+    'certificate',
+    certificate.id
+  );
 
   res.json({
     success: true,
