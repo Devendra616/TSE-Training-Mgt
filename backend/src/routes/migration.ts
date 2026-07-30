@@ -1,16 +1,16 @@
-import { Router } from 'express';
-import { body, param } from 'express-validator';
+import { Router } from "express";
+import { body } from "express-validator";
 import {
   uploadMigrationFile,
   checkDuplicate,
   migrateCertificate,
   bulkMigrate,
   getMigrationStats,
-} from '../controllers/migrationController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
-import { validateRequest } from '../middleware/validate.js';
-import { UserRole } from '../models/index.js';
-import { uploadMigrationDocument } from '../middleware/upload.js';
+} from "../controllers/migrationController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
+import { validateRequest } from "../middleware/validate.js";
+import { UserRole } from "../models/index.js";
+import { uploadMigrationDocument } from "../middleware/upload.js";
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.use(authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER));
  * @desc    Upload file for migration
  * @access  Admin, Training Officer
  */
-router.post('/upload', uploadMigrationDocument, uploadMigrationFile);
+router.post("/upload", uploadMigrationDocument, uploadMigrationFile);
 
 /**
  * @route   POST /api/migration/check-duplicate
@@ -31,15 +31,15 @@ router.post('/upload', uploadMigrationDocument, uploadMigrationFile);
  * @access  Admin, Training Officer
  */
 router.post(
-  '/check-duplicate',
+  "/check-duplicate",
   [
-    body('employeeId').optional().isInt(),
-    body('trainingId').optional().isInt(),
-    body('issueDate').optional().isString(),
-    body('certificateNumber').optional().isString(),
+    body("employeeId").optional().isInt(),
+    body("trainingId").optional().isInt(),
+    body("issueDate").optional().isString(),
+    body("certificateNumber").optional().isString(),
   ],
   validateRequest,
-  checkDuplicate
+  checkDuplicate,
 );
 
 /**
@@ -48,18 +48,18 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/certificate',
+  "/certificate",
   [
-    body('employeeId').isInt().withMessage('Valid employee ID is required'),
-    body('trainingId').isInt().withMessage('Valid training ID is required'),
-    body('issueDate').notEmpty().withMessage('Issue date is required'),
-    body('certificateNumber').optional().isString(),
-    body('validFrom').optional().isString(),
-    body('validUntil').optional().isString(),
-    body('daysAttended').optional().isInt({ min: 1 }),
+    body("employeeId").isInt().withMessage("Valid employee ID is required"),
+    body("trainingId").isInt().withMessage("Valid training ID is required"),
+    body("issueDate").notEmpty().withMessage("Issue date is required"),
+    body("certificateNumber").optional().isString(),
+    body("validFrom").optional().isString(),
+    body("validUntil").optional().isString(),
+    body("daysAttended").optional().isInt({ min: 1 }),
   ],
   validateRequest,
-  migrateCertificate
+  migrateCertificate,
 );
 
 /**
@@ -68,10 +68,14 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/bulk',
-  [body('certificates').isArray({ min: 1 }).withMessage('Certificates array is required')],
+  "/bulk",
+  [
+    body("certificates")
+      .isArray({ min: 1 })
+      .withMessage("Certificates array is required"),
+  ],
   validateRequest,
-  bulkMigrate
+  bulkMigrate,
 );
 
 /**
@@ -79,6 +83,6 @@ router.post(
  * @desc    Get migration statistics
  * @access  Admin, Training Officer
  */
-router.get('/stats', getMigrationStats);
+router.get("/stats", getMigrationStats);
 
 export default router;

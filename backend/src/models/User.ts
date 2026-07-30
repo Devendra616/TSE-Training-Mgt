@@ -90,9 +90,11 @@ User.init(
         model: "employees",
         key: "id",
       },
+      onUpdate: "CASCADE",
+      onDelete: "NO ACTION",
     },
     signatureUrl: {
-      type: DataTypes.STRING(500),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     isActive: {

@@ -10,9 +10,10 @@
     "test": "jest",
     "test:api": "jest --testPathPattern=tests/api",
     "lint": "eslint src/**/*.ts",
-    "db:migrate": "npx sequelize-cli db:migrate",
+    "db:sync": "tsx src/utils/syncDatabase.ts",
+    "db:migrate": "npm run db:sync",
     "db:seed": "tsx src/utils/seed.ts",
-    "db:reset": "npx sequelize-cli db:migrate:undo:all && npm run db:migrate && npm run db:seed"
+    "db:reset": "npm run db:sync && npm run db:seed"
   },
   "dependencies": {
     "express": "^4.18.2",

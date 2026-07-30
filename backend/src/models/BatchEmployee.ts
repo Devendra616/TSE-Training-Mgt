@@ -1,10 +1,10 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Enrollment status
 export enum EnrollmentStatus {
-  ENROLLED = 'enrolled',
-  WITHDRAWN = 'withdrawn',
+  ENROLLED = "enrolled",
+  WITHDRAWN = "withdrawn",
 }
 
 // Attributes interface
@@ -19,14 +19,23 @@ export interface BatchEmployeeAttributes {
   updatedAt: Date;
 }
 
-export interface BatchEmployeeCreationAttributes
-  extends Optional<BatchEmployeeAttributes, 'id' | 'enrollmentStatus' | 'enrolledAt' | 'enrolledBy' | 'createdAt' | 'updatedAt'> {}
+export interface BatchEmployeeCreationAttributes extends Optional<
+  BatchEmployeeAttributes,
+  | "id"
+  | "enrollmentStatus"
+  | "enrolledAt"
+  | "enrolledBy"
+  | "createdAt"
+  | "updatedAt"
+> {}
 
 /**
  * BatchEmployee model - Junction table for batch enrollment
  */
-export class BatchEmployee extends Model<BatchEmployeeAttributes, BatchEmployeeCreationAttributes>
-  implements BatchEmployeeAttributes {
+export class BatchEmployee
+  extends Model<BatchEmployeeAttributes, BatchEmployeeCreationAttributes>
+  implements BatchEmployeeAttributes
+{
   declare id: number;
   declare batchId: number;
   declare employeeId: number;
@@ -47,35 +56,40 @@ BatchEmployee.init(
     batchId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "batch_id",
       references: {
-        model: 'batches',
-        key: 'id',
+        model: "batches",
+        key: "id",
       },
     },
     employeeId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "employee_id",
       references: {
-        model: 'employees',
-        key: 'id',
+        model: "employees",
+        key: "id",
       },
     },
     enrollmentStatus: {
       type: DataTypes.ENUM(...Object.values(EnrollmentStatus)),
       allowNull: false,
+      field: "enrollment_status",
       defaultValue: EnrollmentStatus.ENROLLED,
     },
     enrolledAt: {
       type: DataTypes.DATE,
       allowNull: false,
+      field: "enrolled_at",
       defaultValue: DataTypes.NOW,
     },
     enrolledBy: {
       type: DataTypes.INTEGER,
       allowNull: true,
+      field: "enrolled_by",
       references: {
-        model: 'users',
-        key: 'id',
+        model: "users",
+        key: "id",
       },
     },
     createdAt: {
@@ -91,14 +105,14 @@ BatchEmployee.init(
   },
   {
     sequelize,
-    tableName: 'batch_employees',
+    tableName: "batch_employees",
     timestamps: true,
     indexes: [
-      { fields: ['batch_id', 'employee_id'], unique: true },
-      { fields: ['batch_id'] },
-      { fields: ['employee_id'] },
+      { fields: ["batch_id", "employee_id"], unique: true },
+      { fields: ["batch_id"] },
+      { fields: ["employee_id"] },
     ],
-  }
+  },
 );
 
 export default BatchEmployee;

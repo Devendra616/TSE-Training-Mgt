@@ -1,37 +1,38 @@
-import { Request, Response } from 'express';
-import { Notification, User, NotificationType } from '../models/index.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-import { NotFoundError } from '../utils/errors.js';
-import { Op } from 'sequelize';
+import { Request, Response } from "express";
+import { Notification, User, NotificationType } from "../models/index.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { NotFoundError } from "../utils/errors.js";
 
 /**
  * Get user notifications
  * GET /api/notifications
  */
-export const getNotifications = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
-  const { unreadOnly, limit = 20 } = req.query;
+export const getNotifications = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { unreadOnly, limit = 20 } = req.query;
 
-  const where: any = { userId };
-  if (unreadOnly === 'true') {
-    where.isRead = false;
-  }
+    const where: any = { userId };
+    if (unreadOnly === "true") {
+      where.isRead = false;
+    }
 
-  const notifications = await Notification.findAll({
-    where,
-    order: [['createdAt', 'DESC']],
-    limit: Number(limit),
-  });
+    const notifications = await Notification.findAll({
+      where,
+      order: [["createdAt", "DESC"]],
+      limit: Number(limit),
+    });
 
-  const unreadCount = await Notification.count({
-    where: { userId, isRead: false },
-  });
+    const unreadCount = await Notification.count({
+      where: { userId, isRead: false },
+    });
 
-  res.json({
-    success: true,
-    data: { notifications, unreadCount },
-  });
-});
+    res.json({
+      success: true,
+      data: { notifications, unreadCount },
+    });
+  },
+);
 
 /**
  * Mark notification as read
@@ -46,7 +47,7 @@ export const markAsRead = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!notification) {
-    throw new NotFoundError('Notification');
+    throw new NotFoundError("Notification");
   }
 
   await notification.update({ isRead: true, readAt: new Date() });
@@ -61,35 +62,37 @@ export const markAsRead = asyncHandler(async (req: Request, res: Response) => {
  * Mark all notifications as read
  * PUT /api/notifications/read-all
  */
-export const markAllAsRead = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+export const markAllAsRead = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user!.id;
 
-  await Notification.update(
-    { isRead: true, readAt: new Date() },
-    { where: { userId, isRead: false } }
-  );
+    await Notification.update(
+      { isRead: true, readAt: new Date() },
+      { where: { userId, isRead: false } },
+    );
 
-  res.json({
-    success: true,
-    message: 'All notifications marked as read',
-  });
-});
+    res.json({
+      success: true,
+      message: "All notifications marked as read",
+    });
+  },
+);
 
 /**
  * Helper to generate link from related entity
  */
 function generateLink(type?: string, id?: number): string | null {
   if (!type || !id) return null;
-  
+
   switch (type) {
-    case 'certificate':
-    case 'certificates':
-      return '/certificates'; // or /certificates/${id} but list view is safer for now or if bulk
-    case 'batch': 
+    case "certificate":
+    case "certificates":
+      return "/certificates"; // or /certificates/${id} but list view is safer for now or if bulk
+    case "batch":
       return `/batches/${id}`;
-    case 'training':
+    case "training":
       return `/trainings/${id}`;
-    case 'employee':
+    case "employee":
       return `/employees/${id}`;
     default:
       return null;
@@ -105,10 +108,10 @@ export async function createNotification(
   title: string,
   message: string,
   relatedType?: string,
-  relatedId?: number
+  relatedId?: number,
 ): Promise<Notification> {
   const link = generateLink(relatedType, relatedId);
-  
+
   return Notification.create({
     userId,
     type,
@@ -127,7 +130,7 @@ export async function broadcastNotification(
   title: string,
   message: string,
   relatedType?: string,
-  relatedId?: number
+  relatedId?: number,
 ): Promise<void> {
   const link = generateLink(relatedType, relatedId);
 
@@ -138,7 +141,7 @@ export async function broadcastNotification(
       title,
       message,
       link,
-    }))
+    })),
   );
 }
 
@@ -151,16 +154,23 @@ export async function notifyRole(
   title: string,
   message: string,
   relatedType?: string,
-  relatedId?: number
+  relatedId?: number,
 ): Promise<void> {
   const users = await User.findAll({
     where: { role, isActive: true },
-    attributes: ['id'],
+    attributes: ["id"],
   });
 
   const userIds = users.map((u) => u.id);
   if (userIds.length > 0) {
-    await broadcastNotification(userIds, type, title, message, relatedType, relatedId);
+    await broadcastNotification(
+      userIds,
+      type,
+      title,
+      message,
+      relatedType,
+      relatedId,
+    );
   }
 }
 

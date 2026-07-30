@@ -21,8 +21,7 @@ import {
   type MigrateCertificateData,
 } from "@/services/migration";
 import { searchEmployees, type Employee } from "@/services/employees";
-import { getTrainings, type Training } from "@/services/trainings";
-import { cn } from "@/utils/cn";
+import { getTrainings } from "@/services/trainings";
 
 export function MigrationPage() {
   const queryClient = useQueryClient();

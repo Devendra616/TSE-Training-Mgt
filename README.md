@@ -9,6 +9,7 @@ A full-stack web application for managing employee training compliance in mining
 ## 🎯 Features
 
 ### Core Functionality
+
 - **Employee Management** - Full CRUD with photo upload, SAP ID, designations
 - **Training Master** - Define training types with validity periods and mandatory flags
 - **Batch Scheduling** - Create training batches with capacity, dates, venue, instructor
@@ -17,6 +18,7 @@ A full-stack web application for managing employee training compliance in mining
 - **Compliance Dashboard** - Real-time status indicators (🟢🟡🔴)
 
 ### Additional Features
+
 - **Migration Tool** - Digitize legacy paper certificates with duplicate detection
 - **Calendar View** - Monthly grid visualization of all batches
 - **Reports & Export** - Employee history, batch reports, CSV export
@@ -25,16 +27,16 @@ A full-stack web application for managing employee training compliance in mining
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18, TypeScript, Tailwind CSS, Vite |
-| Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL 15 |
-| Cache | Redis 7 |
-| Auth | JWT with HTTP-only cookies |
-| PDF | Puppeteer |
-| File Upload | Multer |
-| Container | Docker & Docker Compose |
+| Layer       | Technology                               |
+| ----------- | ---------------------------------------- |
+| Frontend    | React 18, TypeScript, Tailwind CSS, Vite |
+| Backend     | Node.js, Express, TypeScript             |
+| Database    | PostgreSQL 15                            |
+| Cache       | Redis 7                                  |
+| Auth        | JWT with HTTP-only cookies               |
+| PDF         | Puppeteer                                |
+| File Upload | Multer                                   |
+| Container   | Docker & Docker Compose                  |
 
 ## 📁 Project Structure
 
@@ -67,6 +69,7 @@ TSE-Training Mgt/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - Docker & Docker Compose
 - npm or yarn
@@ -74,171 +77,194 @@ TSE-Training Mgt/
 ### Quick Start
 
 1. **Clone and navigate**
+
    ```bash
    cd TSE-Training\ Mgt
    ```
 
 2. **Start Docker services**
+
    ```bash
    docker-compose up -d
    ```
 
 3. **Install dependencies**
+
    ```bash
    # Backend
    cd backend && npm install
-   
+
    # Frontend
    cd ../frontend && npm install
    ```
 
 4. **Configure environment**
+
    ```bash
    cp backend/.env.example backend/.env
    # Edit .env with your settings
    ```
 
-5. **Seed database**
+5. **Initialize the database**
+
+   ```bash
+   cd backend && npm run db:sync
+   ```
+
+6. **Seed default/demo data (optional but recommended)**
+
    ```bash
    cd backend && npm run db:seed
    ```
 
-6. **Start development servers**
+7. **Start development servers**
+
    ```bash
    # Terminal 1 - Backend (port 3000)
    cd backend && npm run dev
-   
+
    # Terminal 2 - Frontend (port 5173)
    cd frontend && npm run dev
    ```
 
-7. **Access the application**
+8. **Access the application**
    - Frontend: http://localhost:5173
    - API: http://localhost:3000/api
 
 ### Default Login Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@example.com | admin123 |
-| Training Officer | officer@example.com | officer123 |
-| Mines Manager | manager@example.com | manager123 |
+| Role             | Email              | Password    |
+| ---------------- | ------------------ | ----------- |
+| Admin            | admin@mining.com   | password123 |
+| Training Officer | officer@mining.com | password123 |
+| Mines Manager    | manager@mining.com | password123 |
 
 ## 📚 API Documentation
 
 ### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login with email/password |
-| POST | `/api/auth/logout` | Logout and clear cookie |
-| GET | `/api/auth/me` | Get current user |
-| PUT | `/api/auth/change-password` | Change password |
+
+| Method | Endpoint                    | Description               |
+| ------ | --------------------------- | ------------------------- |
+| POST   | `/api/auth/login`           | Login with email/password |
+| POST   | `/api/auth/logout`          | Logout and clear cookie   |
+| GET    | `/api/auth/me`              | Get current user          |
+| PUT    | `/api/auth/change-password` | Change password           |
 
 ### Users (Admin only)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users` | List all users |
-| POST | `/api/users` | Create user |
-| PUT | `/api/users/:id` | Update user |
-| DELETE | `/api/users/:id` | Delete user |
+
+| Method | Endpoint         | Description    |
+| ------ | ---------------- | -------------- |
+| GET    | `/api/users`     | List all users |
+| POST   | `/api/users`     | Create user    |
+| PUT    | `/api/users/:id` | Update user    |
+| DELETE | `/api/users/:id` | Delete user    |
 
 ### Departments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/departments` | List departments |
-| POST | `/api/departments` | Create department |
-| PUT | `/api/departments/:id` | Update department |
+
+| Method | Endpoint               | Description       |
+| ------ | ---------------------- | ----------------- |
+| GET    | `/api/departments`     | List departments  |
+| POST   | `/api/departments`     | Create department |
+| PUT    | `/api/departments/:id` | Update department |
 | DELETE | `/api/departments/:id` | Delete department |
 
 ### Employees
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/employees` | List with search/pagination |
-| GET | `/api/employees/:id` | Get by ID |
-| POST | `/api/employees` | Create employee |
-| PUT | `/api/employees/:id` | Update employee |
-| DELETE | `/api/employees/:id` | Delete employee |
-| POST | `/api/employees/:id/photo` | Upload photo |
+
+| Method | Endpoint                   | Description                 |
+| ------ | -------------------------- | --------------------------- |
+| GET    | `/api/employees`           | List with search/pagination |
+| GET    | `/api/employees/:id`       | Get by ID                   |
+| POST   | `/api/employees`           | Create employee             |
+| PUT    | `/api/employees/:id`       | Update employee             |
+| DELETE | `/api/employees/:id`       | Delete employee             |
+| POST   | `/api/employees/:id/photo` | Upload photo                |
 
 ### Trainings
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/trainings` | List all trainings |
-| GET | `/api/trainings/:id` | Get by ID |
-| POST | `/api/trainings` | Create training |
-| PUT | `/api/trainings/:id` | Update training |
-| DELETE | `/api/trainings/:id` | Delete training |
+
+| Method | Endpoint             | Description        |
+| ------ | -------------------- | ------------------ |
+| GET    | `/api/trainings`     | List all trainings |
+| GET    | `/api/trainings/:id` | Get by ID          |
+| POST   | `/api/trainings`     | Create training    |
+| PUT    | `/api/trainings/:id` | Update training    |
+| DELETE | `/api/trainings/:id` | Delete training    |
 
 ### Batches
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/batches` | List with filters |
-| GET | `/api/batches/:id` | Get batch details |
-| POST | `/api/batches` | Create batch |
-| PUT | `/api/batches/:id` | Update batch |
-| DELETE | `/api/batches/:id` | Delete batch |
-| POST | `/api/batches/:id/clone` | Clone batch |
-| POST | `/api/batches/:id/enroll` | Enroll employees |
-| DELETE | `/api/batches/:id/enroll/:empId` | Remove employee |
-| GET | `/api/batches/:id/attendance` | Get attendance matrix |
-| POST | `/api/batches/:id/attendance` | Mark single attendance |
-| POST | `/api/batches/:id/attendance/bulk` | Bulk mark attendance |
+
+| Method | Endpoint                           | Description            |
+| ------ | ---------------------------------- | ---------------------- |
+| GET    | `/api/batches`                     | List with filters      |
+| GET    | `/api/batches/:id`                 | Get batch details      |
+| POST   | `/api/batches`                     | Create batch           |
+| PUT    | `/api/batches/:id`                 | Update batch           |
+| DELETE | `/api/batches/:id`                 | Delete batch           |
+| POST   | `/api/batches/:id/clone`           | Clone batch            |
+| POST   | `/api/batches/:id/enroll`          | Enroll employees       |
+| DELETE | `/api/batches/:id/enroll/:empId`   | Remove employee        |
+| GET    | `/api/batches/:id/attendance`      | Get attendance matrix  |
+| POST   | `/api/batches/:id/attendance`      | Mark single attendance |
+| POST   | `/api/batches/:id/attendance/bulk` | Bulk mark attendance   |
 
 ### Certificates
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/certificates` | List with status filter |
-| GET | `/api/certificates/pending` | Pending approvals |
-| POST | `/api/certificates/generate` | Generate drafts from batch |
-| PUT | `/api/certificates/:id/submit` | Submit for approval |
-| POST | `/api/certificates/submit-bulk` | Bulk submit |
-| PUT | `/api/certificates/:id/approve` | Approve certificate |
-| POST | `/api/certificates/approve-bulk` | Bulk approve |
-| PUT | `/api/certificates/:id/reject` | Reject with reason |
-| PUT | `/api/certificates/:id/resubmit` | Resubmit rejected |
-| GET | `/api/certificates/:id/pdf` | Download PDF |
-| GET | `/api/certificates/employee/:id` | Employee history |
+
+| Method | Endpoint                         | Description                |
+| ------ | -------------------------------- | -------------------------- |
+| GET    | `/api/certificates`              | List with status filter    |
+| GET    | `/api/certificates/pending`      | Pending approvals          |
+| POST   | `/api/certificates/generate`     | Generate drafts from batch |
+| PUT    | `/api/certificates/:id/submit`   | Submit for approval        |
+| POST   | `/api/certificates/submit-bulk`  | Bulk submit                |
+| PUT    | `/api/certificates/:id/approve`  | Approve certificate        |
+| POST   | `/api/certificates/approve-bulk` | Bulk approve               |
+| PUT    | `/api/certificates/:id/reject`   | Reject with reason         |
+| PUT    | `/api/certificates/:id/resubmit` | Resubmit rejected          |
+| GET    | `/api/certificates/:id/pdf`      | Download PDF               |
+| GET    | `/api/certificates/employee/:id` | Employee history           |
 
 ### Dashboard
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/dashboard` | Overview stats |
-| GET | `/api/dashboard/compliance` | Compliance details |
-| GET | `/api/dashboard/by-department` | Stats by department |
-| GET | `/api/dashboard/by-training` | Stats by training |
+
+| Method | Endpoint                       | Description         |
+| ------ | ------------------------------ | ------------------- |
+| GET    | `/api/dashboard`               | Overview stats      |
+| GET    | `/api/dashboard/compliance`    | Compliance details  |
+| GET    | `/api/dashboard/by-department` | Stats by department |
+| GET    | `/api/dashboard/by-training`   | Stats by training   |
 
 ### Reports
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/reports/employee/:id` | Employee training report |
-| GET | `/api/reports/batch/:id` | Batch report |
-| GET | `/api/reports/training/:id` | Training summary |
-| GET | `/api/reports/department/:id` | Department compliance |
-| GET | `/api/reports/export/certificates` | CSV export |
+
+| Method | Endpoint                           | Description              |
+| ------ | ---------------------------------- | ------------------------ |
+| GET    | `/api/reports/employee/:id`        | Employee training report |
+| GET    | `/api/reports/batch/:id`           | Batch report             |
+| GET    | `/api/reports/training/:id`        | Training summary         |
+| GET    | `/api/reports/department/:id`      | Department compliance    |
+| GET    | `/api/reports/export/certificates` | CSV export               |
 
 ### Notifications
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/notifications` | Get user notifications |
-| PUT | `/api/notifications/:id/read` | Mark as read |
-| PUT | `/api/notifications/read-all` | Mark all as read |
+
+| Method | Endpoint                      | Description            |
+| ------ | ----------------------------- | ---------------------- |
+| GET    | `/api/notifications`          | Get user notifications |
+| PUT    | `/api/notifications/:id/read` | Mark as read           |
+| PUT    | `/api/notifications/read-all` | Mark all as read       |
 
 ### Migration
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/migration/upload` | Upload PDF/image |
-| POST | `/api/migration/check-duplicate` | Check for duplicates |
-| POST | `/api/migration/certificate` | Migrate single cert |
-| POST | `/api/migration/bulk` | Bulk migrate |
-| GET | `/api/migration/stats` | Migration statistics |
+
+| Method | Endpoint                         | Description          |
+| ------ | -------------------------------- | -------------------- |
+| POST   | `/api/migration/upload`          | Upload PDF/image     |
+| POST   | `/api/migration/check-duplicate` | Check for duplicates |
+| POST   | `/api/migration/certificate`     | Migrate single cert  |
+| POST   | `/api/migration/bulk`            | Bulk migrate         |
+| GET    | `/api/migration/stats`           | Migration statistics |
 
 ## 👥 User Roles
 
-| Role | Permissions |
-|------|-------------|
-| **Admin** | Full access to all features |
+| Role                 | Permissions                                                |
+| -------------------- | ---------------------------------------------------------- |
+| **Admin**            | Full access to all features                                |
 | **Training Officer** | Manage batches, attendance, submit certificates, migration |
-| **Mines Manager** | View all, approve/reject certificates |
+| **Mines Manager**    | View all, approve/reject certificates                      |
 
 ## 🔐 Security Features
 

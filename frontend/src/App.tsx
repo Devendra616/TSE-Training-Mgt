@@ -1,22 +1,22 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { EmployeesPage } from './pages/EmployeesPage';
-import { TrainingsPage } from './pages/TrainingsPage';
-import { BatchesPage } from './pages/BatchesPage';
-import { BatchDetailPage } from './pages/BatchDetailPage';
-import { CertificatesPage } from './pages/CertificatesPage';
-import { ApprovalsPage } from './pages/ApprovalsPage';
-import { MigrationPage } from './pages/MigrationPage';
-import { CalendarPage } from './pages/CalendarPage';
-import { MainLayout } from './components/layout/MainLayout';
-import { SettingsPage } from './pages/SettingsPage';
-import { useAuthStore } from './store/authStore';
-import { getCurrentUser } from './services/auth';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { LoginPage } from "./pages/LoginPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { EmployeesPage } from "./pages/EmployeesPage";
+import { TrainingsPage } from "./pages/TrainingsPage";
+import { BatchesPage } from "./pages/BatchesPage";
+import { BatchDetailPage } from "./pages/BatchDetailPage";
+import { CertificatesPage } from "./pages/CertificatesPage";
+import { ApprovalsPage } from "./pages/ApprovalsPage";
+import { MigrationPage } from "./pages/MigrationPage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { MainLayout } from "./components/layout/MainLayout";
+import { SettingsPage } from "./pages/SettingsPage";
+import { useAuthStore } from "./store/authStore";
+import { getCurrentUser } from "./services/auth";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -114,17 +114,6 @@ function App() {
         </AuthInitializer>
       </BrowserRouter>
     </QueryClientProvider>
-  );
-}
-
-// Placeholder component for settings
-function PlaceholderPage({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <div className="text-6xl mb-4">⚙️</div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{title}</h1>
-      <p className="text-gray-500 dark:text-gray-400">{description}</p>
-    </div>
   );
 }
 

@@ -1,186 +1,203 @@
-import { Request, Response } from 'express';
-import { Certificate, Employee, Training, Batch, WorkflowStatus, CompletionStatus } from '../models/index.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-import { NotFoundError, ValidationError, ConflictError } from '../utils/errors.js';
-import { logUserAction } from '../utils/logger.js';
-import { Op } from 'sequelize';
-import { addDays, parse, isValid } from 'date-fns';
-import path from 'path';
-import fs from 'fs/promises';
-import { config } from '../config/index.js';
+import { Request, Response } from "express";
+import {
+  Certificate,
+  Employee,
+  Training,
+  WorkflowStatus,
+  AttendanceStatus,
+} from "../models/index.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
+import {
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "../utils/errors.js";
+import { logUserAction } from "../utils/logger.js";
+import { Op } from "sequelize";
+import { addDays, isValid } from "date-fns";
 
 /**
  * Upload file for migration (PDF/Image)
  * POST /api/migration/upload
  */
-export const uploadMigrationFile = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.file) {
-    throw new ValidationError('File is required');
-  }
+export const uploadMigrationFile = asyncHandler(
+  async (req: Request, res: Response) => {
+    if (!req.file) {
+      throw new ValidationError("File is required");
+    }
 
-  const fileUrl = `/uploads/certificates/${req.file.filename}`;
+    const fileUrl = `/uploads/certificates/${req.file.filename}`;
 
-  logUserAction(req.user!.id, 'upload_migration_file', 'migration', 0, {
-    filename: req.file.filename,
-  });
-
-  res.status(201).json({
-    success: true,
-    data: {
-      fileUrl,
+    logUserAction(req.user!.id, "upload_migration_file", "migration", 0, {
       filename: req.file.filename,
-      originalName: req.file.originalname,
-      size: req.file.size,
-      mimeType: req.file.mimetype,
-    },
-  });
-});
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimeType: req.file.mimetype,
+      },
+    });
+  },
+);
 
 /**
  * Check for duplicate certificates before migration
  * POST /api/migration/check-duplicate
  */
-export const checkDuplicate = asyncHandler(async (req: Request, res: Response) => {
-  const { employeeId, trainingId, issueDate, certificateNumber } = req.body;
+export const checkDuplicate = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { employeeId, trainingId, issueDate, certificateNumber } = req.body;
 
-  const where: any = {};
-  
-  // Check by certificate number if provided
-  if (certificateNumber) {
-    const existing = await Certificate.findOne({
-      where: { certificateNumber },
-    });
-    
-    if (existing) {
-      return res.json({
-        success: true,
-        data: {
-          isDuplicate: true,
-          reason: 'Certificate number already exists',
-          existingCertificate: existing,
+    // Check by certificate number if provided
+    if (certificateNumber) {
+      const existing = await Certificate.findOne({
+        where: { certificateNumber },
+      });
+
+      if (existing) {
+        return res.json({
+          success: true,
+          data: {
+            isDuplicate: true,
+            reason: "Certificate number already exists",
+            existingCertificate: existing,
+          },
+        });
+      }
+    }
+
+    // Check by employee + training + issue date
+    if (employeeId && trainingId && issueDate) {
+      const parsedDate = new Date(issueDate);
+      const startOfDay = new Date(parsedDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(parsedDate.setHours(23, 59, 59, 999));
+
+      const existing = await Certificate.findOne({
+        where: {
+          employeeId,
+          trainingId,
+          issueDate: {
+            [Op.between]: [startOfDay, endOfDay],
+          },
         },
       });
+
+      if (existing) {
+        return res.json({
+          success: true,
+          data: {
+            isDuplicate: true,
+            reason:
+              "Certificate already exists for this employee, training, and date",
+            existingCertificate: existing,
+          },
+        });
+      }
     }
-  }
 
-  // Check by employee + training + issue date
-  if (employeeId && trainingId && issueDate) {
-    const parsedDate = new Date(issueDate);
-    const startOfDay = new Date(parsedDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(parsedDate.setHours(23, 59, 59, 999));
-
-    const existing = await Certificate.findOne({
-      where: {
-        employeeId,
-        trainingId,
-        issueDate: {
-          [Op.between]: [startOfDay, endOfDay],
-        },
-      },
+    res.json({
+      success: true,
+      data: { isDuplicate: false },
     });
-
-    if (existing) {
-      return res.json({
-        success: true,
-        data: {
-          isDuplicate: true,
-          reason: 'Certificate already exists for this employee, training, and date',
-          existingCertificate: existing,
-        },
-      });
-    }
-  }
-
-  res.json({
-    success: true,
-    data: { isDuplicate: false },
-  });
-});
+  },
+);
 
 /**
  * Migrate a single legacy certificate
  * POST /api/migration/certificate
  */
-export const migrateCertificate = asyncHandler(async (req: Request, res: Response) => {
-  const {
-    employeeId,
-    trainingId,
-    certificateNumber,
-    issueDate,
-    validFrom,
-    validUntil,
-    daysAttended,
-    sourceFileName,
-    notes,
-  } = req.body;
+export const migrateCertificate = asyncHandler(
+  async (req: Request, res: Response) => {
+    const {
+      employeeId,
+      trainingId,
+      certificateNumber,
+      issueDate,
+      validFrom,
+      validUntil,
+      daysAttended,
+      sourceFileName,
+      notes,
+    } = req.body;
 
-  // Validate employee
-  const employee = await Employee.findByPk(employeeId);
-  if (!employee) {
-    throw new NotFoundError('Employee');
-  }
-
-  // Validate training
-  const training = await Training.findByPk(trainingId);
-  if (!training) {
-    throw new NotFoundError('Training');
-  }
-
-  // Check for duplicate
-  if (certificateNumber) {
-    const existing = await Certificate.findOne({
-      where: { certificateNumber },
-    });
-    if (existing) {
-      throw new ConflictError('Certificate number already exists');
+    // Validate employee
+    const employee = await Employee.findByPk(employeeId);
+    if (!employee) {
+      throw new NotFoundError("Employee");
     }
-  }
 
-  // Validate dates
-  const parsedIssueDate = new Date(issueDate);
-  if (!isValid(parsedIssueDate)) {
-    throw new ValidationError('Invalid issue date');
-  }
+    // Validate training
+    const training = await Training.findByPk(trainingId);
+    if (!training) {
+      throw new NotFoundError("Training");
+    }
 
-  // Calculate validUntil if not provided
-  const finalValidFrom = validFrom ? new Date(validFrom) : parsedIssueDate;
-  const finalValidUntil = validUntil 
-    ? new Date(validUntil) 
-    : addDays(finalValidFrom, training.validityDays);
+    // Check for duplicate
+    if (certificateNumber) {
+      const existing = await Certificate.findOne({
+        where: { certificateNumber },
+      });
+      if (existing) {
+        throw new ConflictError("Certificate number already exists");
+      }
+    }
 
-  // Create migrated certificate (directly approved)
-  const certificate = await Certificate.create({
-    employeeId,
-    trainingId,
-    batchId: null, // No batch for migrated certificates
-    workflowStatus: WorkflowStatus.APPROVED, // Migrated = already approved
-    attendanceStatus: CompletionStatus.COMPLETE,
-    certificateNumber: certificateNumber || null,
-    daysAttended: daysAttended || training.durationDays,
-    issueDate: parsedIssueDate,
-    validFrom: finalValidFrom,
-    validUntil: finalValidUntil,
-    isMigrated: true,
-    migratedFrom: sourceFileName || null,
-    migratedAt: new Date(),
-    migratedBy: req.user!.id,
-    approvedAt: new Date(), // Auto-approved for migration
-    approvedBy: req.user!.id,
-    createdBy: req.user!.id,
-    notes: notes || null,
-  });
+    // Validate dates
+    const parsedIssueDate = new Date(issueDate);
+    if (!isValid(parsedIssueDate)) {
+      throw new ValidationError("Invalid issue date");
+    }
 
-  logUserAction(req.user!.id, 'migrate_certificate', 'migration', certificate.id, {
-    employeeId,
-    trainingId,
-    certificateNumber,
-  });
+    // Calculate validUntil if not provided
+    const finalValidFrom = validFrom ? new Date(validFrom) : parsedIssueDate;
+    const finalValidUntil = validUntil
+      ? new Date(validUntil)
+      : addDays(finalValidFrom, training.validityDays);
 
-  res.status(201).json({
-    success: true,
-    data: { certificate },
-  });
-});
+    // Create migrated certificate (directly approved)
+    const certificate = await Certificate.create({
+      employeeId,
+      trainingId,
+      batchId: null as number | null, // No batch for migrated certificates
+      workflowStatus: WorkflowStatus.APPROVED, // Migrated = already approved
+      attendanceStatus: AttendanceStatus.PRESENT,
+      certificateNumber: certificateNumber || null,
+      daysAttended: daysAttended || training.durationDays,
+      issueDate: parsedIssueDate,
+      validFrom: finalValidFrom,
+      validUntil: finalValidUntil,
+      isMigrated: true,
+      migratedAt: new Date(),
+      migratedBy: req.user!.id,
+      approvalAt: new Date(), // Auto-approved for migration
+      approvedBy: req.user!.id,
+      createdBy: req.user!.id,
+      notes: [notes, sourceFileName].filter(Boolean).join(" | ") || null,
+    });
+
+    logUserAction(
+      req.user!.id,
+      "migrate_certificate",
+      "migration",
+      certificate.id,
+      {
+        employeeId,
+        trainingId,
+        certificateNumber,
+      },
+    );
+
+    res.status(201).json({
+      success: true,
+      data: { certificate },
+    });
+  },
+);
 
 /**
  * Bulk migrate certificates
@@ -190,7 +207,7 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
   const { certificates } = req.body;
 
   if (!Array.isArray(certificates) || certificates.length === 0) {
-    throw new ValidationError('Certificates array is required');
+    throw new ValidationError("Certificates array is required");
   }
 
   const results = {
@@ -201,18 +218,18 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
 
   for (let i = 0; i < certificates.length; i++) {
     const cert = certificates[i];
-    
+
     try {
       // Validate employee
       const employee = await Employee.findByPk(cert.employeeId);
       if (!employee) {
-        throw new Error('Employee not found');
+        throw new Error("Employee not found");
       }
 
       // Validate training
       const training = await Training.findByPk(cert.trainingId);
       if (!training) {
-        throw new Error('Training not found');
+        throw new Error("Training not found");
       }
 
       // Check duplicate
@@ -221,22 +238,24 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
           where: { certificateNumber: cert.certificateNumber },
         });
         if (existing) {
-          throw new Error('Certificate number already exists');
+          throw new Error("Certificate number already exists");
         }
       }
 
       const parsedIssueDate = new Date(cert.issueDate);
-      const finalValidFrom = cert.validFrom ? new Date(cert.validFrom) : parsedIssueDate;
-      const finalValidUntil = cert.validUntil 
-        ? new Date(cert.validUntil) 
+      const finalValidFrom = cert.validFrom
+        ? new Date(cert.validFrom)
+        : parsedIssueDate;
+      const finalValidUntil = cert.validUntil
+        ? new Date(cert.validUntil)
         : addDays(finalValidFrom, training.validityDays);
 
       await Certificate.create({
         employeeId: cert.employeeId,
         trainingId: cert.trainingId,
-        batchId: null,
+        batchId: null as number | null as number | null,
         workflowStatus: WorkflowStatus.APPROVED,
-        attendanceStatus: CompletionStatus.COMPLETE,
+        attendanceStatus: AttendanceStatus.PRESENT,
         certificateNumber: cert.certificateNumber || null,
         daysAttended: cert.daysAttended || training.durationDays,
         issueDate: parsedIssueDate,
@@ -245,7 +264,7 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
         isMigrated: true,
         migratedAt: new Date(),
         migratedBy: req.user!.id,
-        approvedAt: new Date(),
+        approvalAt: new Date(),
         approvedBy: req.user!.id,
         createdBy: req.user!.id,
       });
@@ -255,12 +274,12 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
       results.failed++;
       results.errors.push({
         index: i,
-        error: error.message || 'Unknown error',
+        error: error.message || "Unknown error",
       });
     }
   }
 
-  logUserAction(req.user!.id, 'bulk_migrate', 'migration', 0, {
+  logUserAction(req.user!.id, "bulk_migrate", "migration", 0, {
     success: results.success,
     failed: results.failed,
   });
@@ -275,30 +294,40 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
  * Get migration stats
  * GET /api/migration/stats
  */
-export const getMigrationStats = asyncHandler(async (_req: Request, res: Response) => {
-  const totalMigrated = await Certificate.count({
-    where: { isMigrated: true },
-  });
+export const getMigrationStats = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const totalMigrated = await Certificate.count({
+      where: { isMigrated: true },
+    });
 
-  const byTraining = await Certificate.findAll({
-    where: { isMigrated: true },
-    include: [{ model: Training, as: 'training', attributes: ['name', 'code'] }],
-    attributes: [
-      'trainingId',
-      [Certificate.sequelize!.fn('COUNT', Certificate.sequelize!.col('Certificate.id')), 'count'],
-    ],
-    group: ['trainingId', 'training.id', 'training.name', 'training.code'],
-    raw: true,
-  });
+    const byTraining = await Certificate.findAll({
+      where: { isMigrated: true },
+      include: [
+        { model: Training, as: "training", attributes: ["name", "code"] },
+      ],
+      attributes: [
+        "trainingId",
+        [
+          Certificate.sequelize!.fn(
+            "COUNT",
+            Certificate.sequelize!.col("Certificate.id"),
+          ),
+          "count",
+        ],
+      ],
+      group: ["trainingId", "training.id", "training.name", "training.code"],
+      raw: true,
+    });
 
-  res.json({
-    success: true,
-    data: {
-      totalMigrated,
-      byTraining,
-    },
-  });
-});
+    res.json({
+      success: true,
+      data: {
+        totalMigrated,
+        byTraining,
+      },
+    });
+  },
+);
 
 export default {
   uploadMigrationFile,

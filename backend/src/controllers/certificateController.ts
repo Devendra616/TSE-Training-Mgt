@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
-import { Certificate, CertSequence, BatchEmployee, Batch, Training, Employee, Attendance, WorkflowStatus, CompletionStatus, UserRole, NotificationType } from '../models/index.js';
+import { Certificate, CertSequence, BatchEmployee, Batch, Training, Employee, Attendance, WorkflowStatus, AttendanceStatus, UserRole, NotificationType } from '../models/index.js';
 import { notifyRole, createNotification } from './notificationController.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
-import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors.js';
+import { NotFoundError, ValidationError } from '../utils/errors.js';
 import { logUserAction } from '../utils/logger.js';
 import { Op } from 'sequelize';
-import sequelize from '../config/database.js';
 import { addDays } from 'date-fns';
 
 /**
@@ -40,7 +39,7 @@ export const getAllCertificates = asyncHandler(async (req: Request, res: Respons
  * Get certificates pending approval (for Mines Manager)
  * GET /api/certificates/pending
  */
-export const getPendingApprovals = asyncHandler(async (req: Request, res: Response) => {
+export const getPendingApprovals = asyncHandler(async (_req: Request, res: Response) => {
   const certificates = await Certificate.findAll({
     where: { workflowStatus: WorkflowStatus.PENDING_APPROVAL },
     include: [
@@ -163,7 +162,7 @@ export const generateCertificates = asyncHandler(async (req: Request, res: Respo
       trainingId: training.id,
       batchId: batch.id,
       workflowStatus: WorkflowStatus.DRAFT,
-      attendanceStatus: CompletionStatus.COMPLETE,
+      attendanceStatus: AttendanceStatus.PRESENT,
       daysAttended: daysPresent,
       issueDate,
       validFrom,
@@ -302,12 +301,12 @@ export const approveCertificate = asyncHandler(async (req: Request, res: Respons
   // Generate certificate number
   const training = (certificate as any).training;
   const year = new Date().getFullYear();
-  const certNumber = await CertSequence.getNextCertificateNumber(training.trainingType, year);
+  const certNumber = await CertSequence.getNextSequence(training.trainingType, year);
 
   await certificate.update({
     workflowStatus: WorkflowStatus.APPROVED,
-    certificateNumber: certNumber,
-    approvedAt: new Date(),
+    certificateNumber: String(certNumber),
+    approvalAt: new Date(),
     approvedBy: req.user!.id,
   });
 
@@ -358,12 +357,12 @@ export const bulkApprove = asyncHandler(async (req: Request, res: Response) => {
 
   for (const cert of certificates) {
     const training = (cert as any).training;
-    const certNumber = await CertSequence.getNextCertificateNumber(training.trainingType, year);
+    const certNumber = await CertSequence.getNextSequence(training.trainingType, year);
 
     await cert.update({
       workflowStatus: WorkflowStatus.APPROVED,
-      certificateNumber: certNumber,
-      approvedAt: new Date(),
+      certificateNumber: String(certNumber),
+      approvalAt: new Date(),
       approvedBy: req.user!.id,
     });
 

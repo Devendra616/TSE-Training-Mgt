@@ -1,16 +1,16 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Notification type enum
 export enum NotificationType {
-  INFO = 'info',
-  WARNING = 'warning',
-  SUCCESS = 'success',
-  ERROR = 'error',
-  DUE_REMINDER = 'due_reminder',
-  OVERDUE_ALERT = 'overdue_alert',
-  APPROVAL_REQUEST = 'approval_request',
-  APPROVAL_RESULT = 'approval_result',
+  INFO = "info",
+  WARNING = "warning",
+  SUCCESS = "success",
+  ERROR = "error",
+  DUE_REMINDER = "due_reminder",
+  OVERDUE_ALERT = "overdue_alert",
+  APPROVAL_REQUEST = "approval_request",
+  APPROVAL_RESULT = "approval_result",
 }
 
 // Attributes interface
@@ -27,14 +27,18 @@ export interface NotificationAttributes {
   updatedAt: Date;
 }
 
-export interface NotificationCreationAttributes
-  extends Optional<NotificationAttributes, 'id' | 'isRead' | 'readAt' | 'link' | 'createdAt' | 'updatedAt'> {}
+export interface NotificationCreationAttributes extends Optional<
+  NotificationAttributes,
+  "id" | "isRead" | "readAt" | "link" | "createdAt" | "updatedAt"
+> {}
 
 /**
  * Notification model - In-app notifications
  */
-export class Notification extends Model<NotificationAttributes, NotificationCreationAttributes>
-  implements NotificationAttributes {
+export class Notification
+  extends Model<NotificationAttributes, NotificationCreationAttributes>
+  implements NotificationAttributes
+{
   declare id: number;
   declare userId: number;
   declare title: string;
@@ -57,9 +61,10 @@ Notification.init(
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "user_id",
       references: {
-        model: 'users',
-        key: 'id',
+        model: "users",
+        key: "id",
       },
     },
     title: {
@@ -78,11 +83,13 @@ Notification.init(
     isRead: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
+      field: "is_read",
       defaultValue: false,
     },
     readAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: "read_at",
     },
     link: {
       type: DataTypes.STRING(500),
@@ -101,15 +108,15 @@ Notification.init(
   },
   {
     sequelize,
-    tableName: 'notifications',
+    tableName: "notifications",
     timestamps: true,
     indexes: [
-      { fields: ['user_id'] },
-      { fields: ['is_read'] },
-      { fields: ['type'] },
-      { fields: ['created_at'] },
+      { fields: ["user_id"] },
+      { fields: ["is_read"] },
+      { fields: ["type"] },
+      { fields: ["created_at"] },
     ],
-  }
+  },
 );
 
 export default Notification;

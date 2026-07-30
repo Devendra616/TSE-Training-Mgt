@@ -1,8 +1,12 @@
-import api from './api';
+import api from "./api";
 
 export interface MigrationStats {
   totalMigrated: number;
-  byTraining: { trainingId: number; count: number; training: { name: string; code: string } }[];
+  byTraining: {
+    trainingId: number;
+    count: number;
+    training: { name: string; code: string };
+  }[];
 }
 
 export interface DuplicateCheckResult {
@@ -33,9 +37,9 @@ export async function uploadMigrationFile(file: File): Promise<{
   mimeType: string;
 }> {
   const formData = new FormData();
-  formData.append('file', file);
-  const response = await api.post('/migration/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  formData.append("file", file);
+  const response = await api.post("/migration/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data.data;
 }
@@ -49,27 +53,31 @@ export async function checkDuplicate(data: {
   issueDate?: string;
   certificateNumber?: string;
 }): Promise<DuplicateCheckResult> {
-  const response = await api.post('/migration/check-duplicate', data);
+  const response = await api.post("/migration/check-duplicate", data);
   return response.data.data;
 }
 
 /**
  * Migrate a single certificate
  */
-export async function migrateCertificate(data: MigrateCertificateData): Promise<any> {
-  const response = await api.post('/migration/certificate', data);
+export async function migrateCertificate(
+  data: MigrateCertificateData,
+): Promise<any> {
+  const response = await api.post("/migration/certificate", data);
   return response.data.data.certificate;
 }
 
 /**
  * Bulk migrate certificates
  */
-export async function bulkMigrate(certificates: MigrateCertificateData[]): Promise<{
+export async function bulkMigrate(
+  certificates: MigrateCertificateData[],
+): Promise<{
   success: number;
   failed: number;
   errors: { index: number; error: string }[];
 }> {
-  const response = await api.post('/migration/bulk', { certificates });
+  const response = await api.post("/migration/bulk", { certificates });
   return response.data.data;
 }
 
@@ -77,7 +85,7 @@ export async function bulkMigrate(certificates: MigrateCertificateData[]): Promi
  * Get migration stats
  */
 export async function getMigrationStats(): Promise<MigrationStats> {
-  const response = await api.get('/migration/stats');
+  const response = await api.get("/migration/stats");
   return response.data.data;
 }
 

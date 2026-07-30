@@ -66,13 +66,14 @@ Employee.init(
     departmentId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "department_id",
       references: {
         model: "departments",
         key: "id",
       },
     },
     photoUrl: {
-      type: DataTypes.STRING(500),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     status: {

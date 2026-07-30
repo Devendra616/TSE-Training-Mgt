@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { body, param, query } from 'express-validator';
+import { Router } from "express";
+import { body, param } from "express-validator";
 import {
   getAllBatches,
   getBatchById,
@@ -12,10 +12,10 @@ import {
   markAttendance,
   bulkMarkAttendance,
   cloneBatch,
-} from '../controllers/batchController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
-import { validateRequest } from '../middleware/validate.js';
-import { UserRole, BatchStatus } from '../models/index.js';
+} from "../controllers/batchController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
+import { validateRequest } from "../middleware/validate.js";
+import { UserRole, BatchStatus } from "../models/index.js";
 
 const router = Router();
 
@@ -27,7 +27,7 @@ router.use(authenticate);
  * @desc    Get all batches with filters
  * @access  All authenticated users
  */
-router.get('/', getAllBatches);
+router.get("/", getAllBatches);
 
 /**
  * @route   GET /api/batches/:id
@@ -35,10 +35,10 @@ router.get('/', getAllBatches);
  * @access  All authenticated users
  */
 router.get(
-  '/:id',
-  [param('id').isInt().withMessage('Valid batch ID is required')],
+  "/:id",
+  [param("id").isInt().withMessage("Valid batch ID is required")],
   validateRequest,
-  getBatchById
+  getBatchById,
 );
 
 /**
@@ -47,18 +47,23 @@ router.get(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/',
+  "/",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    body('trainingId').isInt().withMessage('Valid training ID is required'),
-    body('startDate').isDate().withMessage('Valid start date is required'),
-    body('endDate').isDate().withMessage('Valid end date is required'),
-    body('capacity').isInt({ min: 1 }).withMessage('Capacity must be at least 1'),
-    body('venue').notEmpty().trim().withMessage('Venue is required'),
-    body('instructorName').notEmpty().trim().withMessage('Instructor name is required'),
+    body("trainingId").isInt().withMessage("Valid training ID is required"),
+    body("startDate").isDate().withMessage("Valid start date is required"),
+    body("endDate").isDate().withMessage("Valid end date is required"),
+    body("capacity")
+      .isInt({ min: 1 })
+      .withMessage("Capacity must be at least 1"),
+    body("venue").notEmpty().trim().withMessage("Venue is required"),
+    body("instructorName")
+      .notEmpty()
+      .trim()
+      .withMessage("Instructor name is required"),
   ],
   validateRequest,
-  createBatch
+  createBatch,
 );
 
 /**
@@ -67,17 +72,17 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.put(
-  '/:id',
+  "/:id",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    param('id').isInt().withMessage('Valid batch ID is required'),
-    body('startDate').optional().isDate(),
-    body('endDate').optional().isDate(),
-    body('capacity').optional().isInt({ min: 1 }),
-    body('status').optional().isIn(Object.values(BatchStatus)),
+    param("id").isInt().withMessage("Valid batch ID is required"),
+    body("startDate").optional().isDate(),
+    body("endDate").optional().isDate(),
+    body("capacity").optional().isInt({ min: 1 }),
+    body("status").optional().isIn(Object.values(BatchStatus)),
   ],
   validateRequest,
-  updateBatch
+  updateBatch,
 );
 
 /**
@@ -86,11 +91,11 @@ router.put(
  * @access  Admin only
  */
 router.delete(
-  '/:id',
+  "/:id",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
-  [param('id').isInt().withMessage('Valid batch ID is required')],
+  [param("id").isInt().withMessage("Valid batch ID is required")],
   validateRequest,
-  deleteBatch
+  deleteBatch,
 );
 
 /**
@@ -99,15 +104,15 @@ router.delete(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/:id/clone',
+  "/:id/clone",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    param('id').isInt().withMessage('Valid batch ID is required'),
-    body('startDate').optional().isDate(),
-    body('endDate').optional().isDate(),
+    param("id").isInt().withMessage("Valid batch ID is required"),
+    body("startDate").optional().isDate(),
+    body("endDate").optional().isDate(),
   ],
   validateRequest,
-  cloneBatch
+  cloneBatch,
 );
 
 /**
@@ -116,14 +121,16 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/:id/enroll',
+  "/:id/enroll",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    param('id').isInt().withMessage('Valid batch ID is required'),
-    body('employeeIds').isArray({ min: 1 }).withMessage('Employee IDs array is required'),
+    param("id").isInt().withMessage("Valid batch ID is required"),
+    body("employeeIds")
+      .isArray({ min: 1 })
+      .withMessage("Employee IDs array is required"),
   ],
   validateRequest,
-  enrollEmployees
+  enrollEmployees,
 );
 
 /**
@@ -132,14 +139,14 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.delete(
-  '/:id/enroll/:employeeId',
+  "/:id/enroll/:employeeId",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    param('id').isInt().withMessage('Valid batch ID is required'),
-    param('employeeId').isInt().withMessage('Valid employee ID is required'),
+    param("id").isInt().withMessage("Valid batch ID is required"),
+    param("employeeId").isInt().withMessage("Valid employee ID is required"),
   ],
   validateRequest,
-  removeEmployee
+  removeEmployee,
 );
 
 /**
@@ -148,10 +155,10 @@ router.delete(
  * @access  All authenticated users
  */
 router.get(
-  '/:id/attendance',
-  [param('id').isInt().withMessage('Valid batch ID is required')],
+  "/:id/attendance",
+  [param("id").isInt().withMessage("Valid batch ID is required")],
   validateRequest,
-  getBatchAttendance
+  getBatchAttendance,
 );
 
 /**
@@ -160,16 +167,18 @@ router.get(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/:id/attendance',
+  "/:id/attendance",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    param('id').isInt().withMessage('Valid batch ID is required'),
-    body('employeeId').isInt().withMessage('Valid employee ID is required'),
-    body('dayNumber').isInt({ min: 1 }).withMessage('Valid day number is required'),
-    body('isPresent').isBoolean().withMessage('isPresent must be boolean'),
+    param("id").isInt().withMessage("Valid batch ID is required"),
+    body("employeeId").isInt().withMessage("Valid employee ID is required"),
+    body("dayNumber")
+      .isInt({ min: 1 })
+      .withMessage("Valid day number is required"),
+    body("isPresent").isBoolean().withMessage("isPresent must be boolean"),
   ],
   validateRequest,
-  markAttendance
+  markAttendance,
 );
 
 /**
@@ -178,15 +187,19 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/:id/attendance/bulk',
+  "/:id/attendance/bulk",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
-    param('id').isInt().withMessage('Valid batch ID is required'),
-    body('dayNumber').isInt({ min: 1 }).withMessage('Valid day number is required'),
-    body('records').isArray({ min: 1 }).withMessage('Records array is required'),
+    param("id").isInt().withMessage("Valid batch ID is required"),
+    body("dayNumber")
+      .isInt({ min: 1 })
+      .withMessage("Valid day number is required"),
+    body("records")
+      .isArray({ min: 1 })
+      .withMessage("Records array is required"),
   ],
   validateRequest,
-  bulkMarkAttendance
+  bulkMarkAttendance,
 );
 
 export default router;

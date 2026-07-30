@@ -66,10 +66,12 @@ Training.init(
     trainingType: {
       type: DataTypes.ENUM(...Object.values(TrainingType)),
       allowNull: false,
+      field: "training_type",
     },
     validityDays: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "validity_days",
       validate: {
         min: 1,
       },
@@ -77,6 +79,7 @@ Training.init(
     durationDays: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "duration_days",
       validate: {
         min: 1,
       },
@@ -84,6 +87,7 @@ Training.init(
     isMandatory: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
+      field: "is_mandatory",
       defaultValue: false,
     },
     description: {

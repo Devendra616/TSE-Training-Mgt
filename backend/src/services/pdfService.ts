@@ -1,7 +1,7 @@
-import puppeteer from 'puppeteer';
-import { Certificate, Training, Employee, Batch } from '../models/index.js';
-import { NotFoundError } from '../utils/errors.js';
-import { format } from 'date-fns';
+import puppeteer from "puppeteer";
+import { Certificate, Training, Employee, Batch } from "../models/index.js";
+import { NotFoundError } from "../utils/errors.js";
+import { format } from "date-fns";
 
 interface CertificateData {
   certificateNumber: string;
@@ -22,17 +22,19 @@ interface CertificateData {
 /**
  * Generate PDF certificate
  */
-export async function generateCertificatePDF(certificateId: number): Promise<Buffer> {
+export async function generateCertificatePDF(
+  certificateId: number,
+): Promise<Buffer> {
   const certificate = await Certificate.findByPk(certificateId, {
     include: [
-      { model: Training, as: 'training' },
-      { model: Employee, as: 'employee' },
-      { model: Batch, as: 'batch' },
+      { model: Training, as: "training" },
+      { model: Employee, as: "employee" },
+      { model: Batch, as: "batch" },
     ],
   });
 
   if (!certificate) {
-    throw new NotFoundError('Certificate');
+    throw new NotFoundError("Certificate");
   }
 
   const training = (certificate as any).training;
@@ -40,37 +42,43 @@ export async function generateCertificatePDF(certificateId: number): Promise<Buf
   const batch = (certificate as any).batch;
 
   const data: CertificateData = {
-    certificateNumber: certificate.certificateNumber || 'DRAFT',
+    certificateNumber: (certificate as any).certificateNumber || "DRAFT",
     employeeName: employee.fullName,
     employeeSapId: employee.sapId,
     employeeDesignation: employee.designation,
     trainingName: training.name,
     trainingType: training.trainingType,
-    batchDates: `${format(new Date(batch.startDate), 'dd MMM yyyy')} - ${format(new Date(batch.endDate), 'dd MMM yyyy')}`,
+    batchDates: `${format(new Date(batch.startDate), "dd MMM yyyy")} - ${format(new Date(batch.endDate), "dd MMM yyyy")}`,
     venue: batch.venue,
     instructorName: batch.instructorName,
     daysAttended: certificate.daysAttended,
-    issueDate: format(new Date(certificate.issueDate), 'dd MMMM yyyy'),
-    validFrom: format(new Date(certificate.validFrom), 'dd MMM yyyy'),
-    validUntil: format(new Date(certificate.validUntil), 'dd MMM yyyy'),
+    issueDate: certificate.issueDate
+      ? format(new Date(certificate.issueDate), "dd MMMM yyyy")
+      : "N/A",
+    validFrom: certificate.validFrom
+      ? format(new Date(certificate.validFrom), "dd MMM yyyy")
+      : "N/A",
+    validUntil: certificate.validUntil
+      ? format(new Date(certificate.validUntil), "dd MMM yyyy")
+      : "N/A",
   };
 
   const html = generateCertificateHTML(data);
 
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       landscape: true,
       printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      margin: { top: "0", right: "0", bottom: "0", left: "0" },
     });
 
     return Buffer.from(pdfBuffer);

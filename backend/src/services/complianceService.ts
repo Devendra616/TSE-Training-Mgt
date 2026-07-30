@@ -1,10 +1,20 @@
-import { Certificate, Employee, Training, Batch, WorkflowStatus } from '../models/index.js';
-import { config } from '../config/index.js';
-import { differenceInDays, addDays } from 'date-fns';
-import { Op } from 'sequelize';
-import sequelize from '../config/database.js';
+import {
+  Certificate,
+  Employee,
+  Training,
+  Batch,
+  WorkflowStatus,
+} from "../models/index.js";
+import { config } from "../config/index.js";
+import { differenceInDays, addDays } from "date-fns";
+import { Op } from "sequelize";
+import sequelize from "../config/database.js";
 
-export type ComplianceStatus = 'compliant' | 'due_soon' | 'overdue' | 'never_trained';
+export type ComplianceStatus =
+  | "compliant"
+  | "due_soon"
+  | "overdue"
+  | "never_trained";
 
 export interface EmployeeCompliance {
   employee: {
@@ -39,32 +49,37 @@ export interface ComplianceStats {
 /**
  * Calculate compliance status based on validity date
  */
-export function calculateComplianceStatus(validUntil: Date | null): { status: ComplianceStatus; daysRemaining: number | null } {
+export function calculateComplianceStatus(validUntil: Date | null): {
+  status: ComplianceStatus;
+  daysRemaining: number | null;
+} {
   if (!validUntil) {
-    return { status: 'never_trained', daysRemaining: null };
+    return { status: "never_trained", daysRemaining: null };
   }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const daysRemaining = differenceInDays(validUntil, today);
   const warningDays = config.compliance.warningDays;
 
   if (daysRemaining < 0) {
-    return { status: 'overdue', daysRemaining };
+    return { status: "overdue", daysRemaining };
   } else if (daysRemaining <= warningDays) {
-    return { status: 'due_soon', daysRemaining };
+    return { status: "due_soon", daysRemaining };
   } else {
-    return { status: 'compliant', daysRemaining };
+    return { status: "compliant", daysRemaining };
   }
 }
 
 /**
  * Get compliance data for a single employee
  */
-export async function getEmployeeCompliance(employeeId: number): Promise<EmployeeCompliance | null> {
+export async function getEmployeeCompliance(
+  employeeId: number,
+): Promise<EmployeeCompliance | null> {
   const employee = await Employee.findByPk(employeeId, {
-    include: ['department'],
+    include: ["department"],
   });
 
   if (!employee) {
@@ -73,7 +88,7 @@ export async function getEmployeeCompliance(employeeId: number): Promise<Employe
 
   // Get all mandatory trainings
   const mandatoryTrainings = await Training.findAll({
-    where: { isMandatory: true, isActive: true },
+    where: { isMandatory: true },
   });
 
   // Get latest certificates for this employee (through batches)
@@ -85,17 +100,19 @@ export async function getEmployeeCompliance(employeeId: number): Promise<Employe
     include: [
       {
         model: Batch,
-        as: 'batch',
-        include: [{ model: Training, as: 'training' }],
+        as: "batch",
+        include: [{ model: Training, as: "training" }],
       },
     ],
-    order: [['nextDueDate', 'DESC']],
+    order: [["nextDueDate", "DESC"]],
   });
 
   // Build training compliance map
   const trainings = mandatoryTrainings.map((training) => {
     // Find latest certificate for this training
-    const cert = certificates.find((c: any) => c.batch?.trainingId === training.id);
+    const cert = certificates.find(
+      (c: any) => c.batch?.trainingId === training.id,
+    );
     const validUntil = cert?.nextDueDate || null;
     const { status, daysRemaining } = calculateComplianceStatus(validUntil);
 
@@ -112,13 +129,13 @@ export async function getEmployeeCompliance(employeeId: number): Promise<Employe
   });
 
   // Determine overall status
-  let overallStatus: ComplianceStatus = 'compliant';
-  if (trainings.some((t) => t.status === 'overdue')) {
-    overallStatus = 'overdue';
-  } else if (trainings.some((t) => t.status === 'never_trained')) {
-    overallStatus = 'never_trained';
-  } else if (trainings.some((t) => t.status === 'due_soon')) {
-    overallStatus = 'due_soon';
+  let overallStatus: ComplianceStatus = "compliant";
+  if (trainings.some((t) => t.status === "overdue")) {
+    overallStatus = "overdue";
+  } else if (trainings.some((t) => t.status === "never_trained")) {
+    overallStatus = "never_trained";
+  } else if (trainings.some((t) => t.status === "due_soon")) {
+    overallStatus = "due_soon";
   }
 
   return {
@@ -128,7 +145,7 @@ export async function getEmployeeCompliance(employeeId: number): Promise<Employe
       fullName: employee.fullName,
       designation: employee.designation,
       photoUrl: employee.photoUrl,
-      departmentName: (employee as any).department?.name || '',
+      departmentName: (employee as any).department?.name || "",
     },
     trainings,
     overallStatus,
@@ -141,21 +158,24 @@ export async function getEmployeeCompliance(employeeId: number): Promise<Employe
 export async function getComplianceStats(): Promise<ComplianceStats> {
   // Get total active employees
   const totalEmployees = await Employee.count({
-    where: { status: 'active' },
+    where: { status: "active" },
   });
 
   // Count employees with at least one approved certificate
-  const employeesWithCerts = await Certificate.findAll({
+  const employeesWithCerts = (await Certificate.findAll({
     where: { workflowStatus: WorkflowStatus.APPROVED },
-    attributes: ['employeeId'],
-    group: ['employeeId'],
+    attributes: ["employeeId"],
+    group: ["employeeId"],
     raw: true,
-  }) as any[];
+  })) as any[];
 
-  const employeeIdsWithCerts = new Set(employeesWithCerts.map((e: any) => e.employeeId));
+  const employeeIdsWithCerts = new Set(
+    employeesWithCerts.map((e: any) => e.employeeId),
+  );
 
   // Get employees with overdue certificates (join through batches)
-  const overdueQuery = await sequelize.query(`
+  const overdueQuery = (await sequelize.query(
+    `
     SELECT DISTINCT c.employee_id
     FROM certificates c
     INNER JOIN batches b ON c.batch_id = b.id
@@ -171,10 +191,13 @@ export async function getComplianceStats(): Promise<ComplianceStats> {
       AND b2.training_id = b.training_id
       AND c2.workflow_status = 'approved'
     )
-  `, { type: 'SELECT' }) as any[];
+  `,
+    { type: "SELECT" },
+  )) as any[];
 
   // Get employees with due soon (within warning days)
-  const dueSoonQuery = await sequelize.query(`
+  const dueSoonQuery = (await sequelize.query(
+    `
     SELECT DISTINCT c.employee_id
     FROM certificates c
     INNER JOIN batches b ON c.batch_id = b.id
@@ -191,8 +214,10 @@ export async function getComplianceStats(): Promise<ComplianceStats> {
       AND b2.training_id = b.training_id
       AND c2.workflow_status = 'approved'
     )
-    AND c.employee_id NOT IN (${overdueQuery.length > 0 ? overdueQuery.map((r: any) => r.employee_id).join(',') : '0'})
-  `, { type: 'SELECT' }) as any[];
+    AND c.employee_id NOT IN (${overdueQuery.length > 0 ? overdueQuery.map((r: any) => r.employee_id).join(",") : "0"})
+  `,
+    { type: "SELECT" },
+  )) as any[];
 
   const overdue = overdueQuery.length;
   const dueSoon = dueSoonQuery.length;
@@ -224,19 +249,31 @@ export async function getUpcomingDueDates(limit: number = 10): Promise<any[]> {
       },
     },
     include: [
-      { model: Employee, as: 'employee', attributes: ['id', 'sapId', 'fullName', 'designation'] },
+      {
+        model: Employee,
+        as: "employee",
+        attributes: ["id", "sapId", "fullName", "designation"],
+      },
       {
         model: Batch,
-        as: 'batch',
-        include: [{ model: Training, as: 'training', attributes: ['id', 'name', 'code'] }],
+        as: "batch",
+        include: [
+          {
+            model: Training,
+            as: "training",
+            attributes: ["id", "name", "code"],
+          },
+        ],
       },
     ],
-    order: [['nextDueDate', 'ASC']],
+    order: [["nextDueDate", "ASC"]],
     limit,
   });
 
   return results.map((cert: any) => {
-    const { status, daysRemaining } = calculateComplianceStatus(new Date(cert.nextDueDate));
+    const { status, daysRemaining } = calculateComplianceStatus(
+      new Date(cert.nextDueDate),
+    );
     return {
       id: cert.id,
       employee: cert.employee,
@@ -252,7 +289,8 @@ export async function getUpcomingDueDates(limit: number = 10): Promise<any[]> {
  * Get overdue employees
  */
 export async function getOverdueEmployees(): Promise<any[]> {
-  const results = await sequelize.query(`
+  const results = await sequelize.query(
+    `
     SELECT 
       e.id as employee_id,
       e.sap_id,
@@ -280,7 +318,9 @@ export async function getOverdueEmployees(): Promise<any[]> {
     )
     ORDER BY c.next_due_date ASC
     LIMIT 20
-  `, { type: 'SELECT' });
+  `,
+    { type: "SELECT" },
+  );
 
   return results as any[];
 }

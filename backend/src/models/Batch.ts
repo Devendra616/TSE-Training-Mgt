@@ -1,12 +1,12 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Batch status enum
 export enum BatchStatus {
-  SCHEDULED = 'scheduled',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
+  SCHEDULED = "scheduled",
+  IN_PROGRESS = "in_progress",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
 }
 
 // Attributes interface
@@ -24,14 +24,18 @@ export interface BatchAttributes {
   updatedAt: Date;
 }
 
-export interface BatchCreationAttributes
-  extends Optional<BatchAttributes, 'id' | 'status' | 'notes' | 'createdAt' | 'updatedAt'> {}
+export interface BatchCreationAttributes extends Optional<
+  BatchAttributes,
+  "id" | "status" | "notes" | "createdAt" | "updatedAt"
+> {}
 
 /**
  * Batch model - Training events/sessions
  */
-export class Batch extends Model<BatchAttributes, BatchCreationAttributes>
-  implements BatchAttributes {
+export class Batch
+  extends Model<BatchAttributes, BatchCreationAttributes>
+  implements BatchAttributes
+{
   declare id: number;
   declare trainingId: number;
   declare startDate: Date;
@@ -55,18 +59,21 @@ Batch.init(
     trainingId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "training_id",
       references: {
-        model: 'trainings',
-        key: 'id',
+        model: "trainings",
+        key: "id",
       },
     },
     startDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+      field: "start_date",
     },
     endDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+      field: "end_date",
     },
     capacity: {
       type: DataTypes.INTEGER,
@@ -82,6 +89,7 @@ Batch.init(
     instructorName: {
       type: DataTypes.STRING(255),
       allowNull: false,
+      field: "instructor_name",
     },
     status: {
       type: DataTypes.ENUM(...Object.values(BatchStatus)),
@@ -105,22 +113,28 @@ Batch.init(
   },
   {
     sequelize,
-    tableName: 'batches',
+    tableName: "batches",
     timestamps: true,
     indexes: [
-      { fields: ['training_id'] },
-      { fields: ['status'] },
-      { fields: ['start_date'] },
-      { fields: ['end_date'] },
+      { fields: ["training_id"] },
+      { fields: ["status"] },
+      { fields: ["start_date"] },
+      { fields: ["end_date"] },
     ],
     validate: {
       endDateAfterStart() {
-        if (this.endDate < this.startDate) {
-          throw new Error('End date must be after or equal to start date');
+        const endDate = (this as any).getDataValue("endDate") as
+          | Date
+          | undefined;
+        const startDate = (this as any).getDataValue("startDate") as
+          | Date
+          | undefined;
+        if (endDate && startDate && endDate < startDate) {
+          throw new Error("End date must be after or equal to start date");
         }
       },
     },
-  }
+  },
 );
 
 export default Batch;

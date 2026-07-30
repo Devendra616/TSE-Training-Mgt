@@ -33,6 +33,9 @@ export async function connectDatabase(): Promise<void> {
   try {
     await sequelize.authenticate();
     logger.info("Database connection established successfully");
+
+    await sequelize.sync();
+    logger.info("Database schema synchronized successfully");
   } catch (error) {
     logger.error("Unable to connect to database:", error);
     throw error;

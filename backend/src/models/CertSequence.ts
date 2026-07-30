@@ -1,5 +1,5 @@
-import { DataTypes, Model, Optional, Transaction } from 'sequelize';
-import sequelize from '../config/database.js';
+import { DataTypes, Model, Optional, Transaction } from "sequelize";
+import sequelize from "../config/database.js";
 
 // Attributes interface
 export interface CertSequenceAttributes {
@@ -11,15 +11,19 @@ export interface CertSequenceAttributes {
   updatedAt: Date;
 }
 
-export interface CertSequenceCreationAttributes
-  extends Optional<CertSequenceAttributes, 'id' | 'lastSeq' | 'createdAt' | 'updatedAt'> {}
+export interface CertSequenceCreationAttributes extends Optional<
+  CertSequenceAttributes,
+  "id" | "lastSeq" | "createdAt" | "updatedAt"
+> {}
 
 /**
  * CertSequence model - Atomic sequence counter for certificate numbers
  * Format: [TrainingType]/[Year]/[EmpID]/[SeqNo]
  */
-export class CertSequence extends Model<CertSequenceAttributes, CertSequenceCreationAttributes>
-  implements CertSequenceAttributes {
+export class CertSequence
+  extends Model<CertSequenceAttributes, CertSequenceCreationAttributes>
+  implements CertSequenceAttributes
+{
   declare id: number;
   declare trainingType: string;
   declare year: number;
@@ -34,16 +38,16 @@ export class CertSequence extends Model<CertSequenceAttributes, CertSequenceCrea
   static async getNextSequence(
     trainingType: string,
     year: number,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<number> {
-    const [sequence, created] = await CertSequence.findOrCreate({
+    const [sequence] = await CertSequence.findOrCreate({
       where: { trainingType, year },
       defaults: { trainingType, year, lastSeq: 0 },
       transaction,
     });
 
     // Increment atomically
-    await sequence.increment('lastSeq', { transaction });
+    await sequence.increment("lastSeq", { transaction });
     await sequence.reload({ transaction });
 
     return sequence.lastSeq;
@@ -60,6 +64,7 @@ CertSequence.init(
     trainingType: {
       type: DataTypes.STRING(50),
       allowNull: false,
+      field: "training_type",
     },
     year: {
       type: DataTypes.INTEGER,
@@ -68,6 +73,7 @@ CertSequence.init(
     lastSeq: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: "last_seq",
       defaultValue: 0,
     },
     createdAt: {
@@ -83,12 +89,10 @@ CertSequence.init(
   },
   {
     sequelize,
-    tableName: 'cert_sequences',
+    tableName: "cert_sequences",
     timestamps: true,
-    indexes: [
-      { fields: ['training_type', 'year'], unique: true },
-    ],
-  }
+    indexes: [{ fields: ["training_type", "year"], unique: true }],
+  },
 );
 
 export default CertSequence;

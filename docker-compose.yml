@@ -54,7 +54,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-training_mgt}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-nmdctse}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-9fC7R#v3P!xAqL2mZ8@WkT$D6N^hS4eB}

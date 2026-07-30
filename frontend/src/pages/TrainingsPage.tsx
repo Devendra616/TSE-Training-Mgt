@@ -1,31 +1,43 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit2, Trash2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent } from '@/components/ui/Card';
-import { getTrainings, createTraining, updateTraining, deleteTraining, type Training, type CreateTrainingData, type TrainingType } from '@/services/trainings';
-import { useAuthStore } from '@/store/authStore';
-import { cn } from '@/utils/cn';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Search, Edit2, Trash2, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Card, CardContent } from "@/components/ui/Card";
+import {
+  getTrainings,
+  createTraining,
+  updateTraining,
+  deleteTraining,
+  type Training,
+  type CreateTrainingData,
+  type TrainingType,
+} from "@/services/trainings";
+import { useAuthStore } from "@/store/authStore";
+import { cn } from "@/utils/cn";
 
 const TRAINING_TYPES: { value: TrainingType; label: string }[] = [
-  { value: 'BASIC', label: 'Basic Training' },
-  { value: 'REF', label: 'Refresher' },
-  { value: 'COJ', label: 'Change of Job' },
-  { value: 'OTHR', label: 'Other' },
+  { value: "BASIC", label: "Basic Training" },
+  { value: "REF", label: "Refresher" },
+  { value: "COJ", label: "Change of Job" },
+  { value: "OTHR", label: "Other" },
 ];
 
 export function TrainingsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const canManage = ['admin', 'training_officer'].includes(user?.role || '');
-  const [search, setSearch] = useState('');
+  const canManage = ["admin", "training_officer"].includes(user?.role || "");
+  const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
 
   // Fetch trainings
-  const { data: trainings, isLoading, error } = useQuery({
-    queryKey: ['trainings', { search }],
+  const {
+    data: trainings,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["trainings", { search }],
     queryFn: () => getTrainings({ search }),
   });
 
@@ -33,17 +45,22 @@ export function TrainingsPage() {
   const createMutation = useMutation({
     mutationFn: createTraining,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainings'] });
+      queryClient.invalidateQueries({ queryKey: ["trainings"] });
       setShowModal(false);
     },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<CreateTrainingData> }) =>
-      updateTraining(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<CreateTrainingData>;
+    }) => updateTraining(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainings'] });
+      queryClient.invalidateQueries({ queryKey: ["trainings"] });
       setShowModal(false);
       setEditingTraining(null);
     },
@@ -53,7 +70,7 @@ export function TrainingsPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteTraining,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainings'] });
+      queryClient.invalidateQueries({ queryKey: ["trainings"] });
     },
   });
 
@@ -63,17 +80,17 @@ export function TrainingsPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this training?')) {
+    if (confirm("Are you sure you want to delete this training?")) {
       deleteMutation.mutate(id);
     }
   };
 
   const getTypeColor = (type: TrainingType) => {
     const colors: Record<TrainingType, string> = {
-      BASIC: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      REF: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      COJ: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-      OTHR: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+      BASIC: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      REF: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+      COJ: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+      OTHR: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400",
     };
     return colors[type];
   };
@@ -83,14 +100,21 @@ export function TrainingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Trainings</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Trainings
+          </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Manage training catalog and compliance requirements
           </p>
         </div>
 
         {canManage && (
-          <Button onClick={() => { setEditingTraining(null); setShowModal(true); }}>
+          <Button
+            onClick={() => {
+              setEditingTraining(null);
+              setShowModal(true);
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Training
           </Button>
@@ -115,18 +139,25 @@ export function TrainingsPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>
       ) : error ? (
-        <div className="text-center py-12 text-red-500">Failed to load trainings</div>
+        <div className="text-center py-12 text-red-500">
+          Failed to load trainings
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {trainings?.map((training) => (
-            <Card key={training.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={training.id}
+              className="hover:shadow-md transition-shadow"
+            >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <span className={cn(
-                      'px-2 py-0.5 rounded text-xs font-medium',
-                      getTypeColor(training.trainingType)
-                    )}>
+                    <span
+                      className={cn(
+                        "px-2 py-0.5 rounded text-xs font-medium",
+                        getTypeColor(training.trainingType),
+                      )}
+                    >
                       {training.trainingType}
                     </span>
                     {training.isMandatory && (
@@ -157,7 +188,9 @@ export function TrainingsPage() {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                   {training.name}
                 </h3>
-                <p className="text-sm text-gray-500 font-mono mb-3">{training.code}</p>
+                <p className="text-sm text-gray-500 font-mono mb-3">
+                  {training.code}
+                </p>
 
                 {training.description && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
@@ -168,7 +201,8 @@ export function TrainingsPage() {
                 <div className="flex items-center gap-4 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
-                    {training.durationDays} day{training.durationDays > 1 ? 's' : ''}
+                    {training.durationDays} day
+                    {training.durationDays > 1 ? "s" : ""}
                   </span>
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4" />
@@ -185,7 +219,10 @@ export function TrainingsPage() {
       {showModal && (
         <TrainingModal
           training={editingTraining}
-          onClose={() => { setShowModal(false); setEditingTraining(null); }}
+          onClose={() => {
+            setShowModal(false);
+            setEditingTraining(null);
+          }}
           onSubmit={(data) => {
             if (editingTraining) {
               updateMutation.mutate({ id: editingTraining.id, data });
@@ -213,13 +250,13 @@ function TrainingModal({
   isLoading: boolean;
 }) {
   const [formData, setFormData] = useState({
-    name: training?.name || '',
-    code: training?.code || '',
-    trainingType: training?.trainingType || 'REF' as TrainingType,
+    name: training?.name || "",
+    code: training?.code || "",
+    trainingType: training?.trainingType || ("REF" as TrainingType),
     validityDays: training?.validityDays || 365,
     durationDays: training?.durationDays || 1,
     isMandatory: training?.isMandatory || false,
-    description: training?.description || '',
+    description: training?.description || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -232,7 +269,7 @@ function TrainingModal({
       <div className="absolute inset-0 bg-gray-900/50" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 animate-fade-in max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {training ? 'Edit Training' : 'Add Training'}
+          {training ? "Edit Training" : "Add Training"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -245,7 +282,9 @@ function TrainingModal({
           <Input
             label="Code"
             value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+            onChange={(e) =>
+              setFormData({ ...formData, code: e.target.value.toUpperCase() })
+            }
             placeholder="e.g., FA-REF"
             required
           />
@@ -255,7 +294,12 @@ function TrainingModal({
             </label>
             <select
               value={formData.trainingType}
-              onChange={(e) => setFormData({ ...formData, trainingType: e.target.value as TrainingType })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  trainingType: e.target.value as TrainingType,
+                })
+              }
               className="flex h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
@@ -272,7 +316,12 @@ function TrainingModal({
               type="number"
               min={1}
               value={formData.durationDays}
-              onChange={(e) => setFormData({ ...formData, durationDays: Number(e.target.value) })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  durationDays: Number(e.target.value),
+                })
+              }
               required
             />
             <Input
@@ -280,7 +329,12 @@ function TrainingModal({
               type="number"
               min={1}
               value={formData.validityDays}
-              onChange={(e) => setFormData({ ...formData, validityDays: Number(e.target.value) })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  validityDays: Number(e.target.value),
+                })
+              }
               required
             />
           </div>
@@ -289,10 +343,15 @@ function TrainingModal({
               type="checkbox"
               id="isMandatory"
               checked={formData.isMandatory}
-              onChange={(e) => setFormData({ ...formData, isMandatory: e.target.checked })}
+              onChange={(e) =>
+                setFormData({ ...formData, isMandatory: e.target.checked })
+              }
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <label htmlFor="isMandatory" className="text-sm text-gray-700 dark:text-gray-300">
+            <label
+              htmlFor="isMandatory"
+              className="text-sm text-gray-700 dark:text-gray-300"
+            >
               Mandatory training
             </label>
           </div>
@@ -302,18 +361,25 @@ function TrainingModal({
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               rows={3}
               className="flex w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Brief description of the training..."
             />
           </div>
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button type="submit" isLoading={isLoading} className="flex-1">
-              {training ? 'Update' : 'Create'}
+              {training ? "Update" : "Create"}
             </Button>
           </div>
         </form>

@@ -1,46 +1,69 @@
-import { useState } from 'react';
-import { toast } from 'react-toastify';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Users, Plus, X, Check, Calendar, MapPin, User, Clock, Award } from 'lucide-react';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
-import { getBatch, getBatchAttendance, enrollEmployees, removeEmployee, markAttendance, type BatchAttendanceResponse } from '@/services/batches';
-import { generateCertificates } from '@/services/certificates';
-import { searchEmployees, type Employee } from '@/services/employees';
-import { useAuthStore } from '@/store/authStore';
-import { cn } from '@/utils/cn';
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Users,
+  Plus,
+  X,
+  Check,
+  Calendar,
+  MapPin,
+  User,
+  Award,
+} from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import {
+  getBatch,
+  getBatchAttendance,
+  enrollEmployees,
+  removeEmployee,
+  markAttendance,
+} from "@/services/batches";
+import { generateCertificates } from "@/services/certificates";
+import { searchEmployees, type Employee } from "@/services/employees";
+import { useAuthStore } from "@/store/authStore";
+import { cn } from "@/utils/cn";
 
 export function BatchDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const canManage = ['admin', 'training_officer'].includes(user?.role || '');
+  const canManage = ["admin", "training_officer"].includes(user?.role || "");
   const [showEnrollModal, setShowEnrollModal] = useState(false);
 
   // Fetch batch details
   const { data: batch, isLoading: batchLoading } = useQuery({
-    queryKey: ['batch', id],
+    queryKey: ["batch", id],
     queryFn: () => getBatch(Number(id)),
     enabled: !!id,
   });
 
   // Fetch attendance
   const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
-    queryKey: ['batchAttendance', id],
+    queryKey: ["batchAttendance", id],
     queryFn: () => getBatchAttendance(Number(id)),
     enabled: !!id,
   });
 
   // Mark attendance mutation
   const markMutation = useMutation({
-    mutationFn: ({ employeeId, dayNumber, isPresent }: { employeeId: number; dayNumber: number; isPresent: boolean }) =>
-      markAttendance(Number(id), employeeId, dayNumber, isPresent),
+    mutationFn: ({
+      employeeId,
+      dayNumber,
+      isPresent,
+    }: {
+      employeeId: number;
+      dayNumber: number;
+      isPresent: boolean;
+    }) => markAttendance(Number(id), employeeId, dayNumber, isPresent),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['batchAttendance', id] });
+      queryClient.invalidateQueries({ queryKey: ["batchAttendance", id] });
     },
   });
 
@@ -48,8 +71,8 @@ export function BatchDetailPage() {
   const removeMutation = useMutation({
     mutationFn: (employeeId: number) => removeEmployee(Number(id), employeeId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['batch', id] });
-      queryClient.invalidateQueries({ queryKey: ['batchAttendance', id] });
+      queryClient.invalidateQueries({ queryKey: ["batch", id] });
+      queryClient.invalidateQueries({ queryKey: ["batchAttendance", id] });
     },
   });
 
@@ -62,14 +85,18 @@ export function BatchDetailPage() {
         toast.success(`Generated ${generated} new certificates`);
       }
       if (skipped.length > 0) {
-        toast.info(`Skipped ${skipped.length} employees (incomplete attendance or already exists)`);
+        toast.info(
+          `Skipped ${skipped.length} employees (incomplete attendance or already exists)`,
+        );
       }
       if (generated === 0 && skipped.length === 0) {
-        toast.info('No eligible employees found for certificate generation');
+        toast.info("No eligible employees found for certificate generation");
       }
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to generate certificates');
+      toast.error(
+        error.response?.data?.message || "Failed to generate certificates",
+      );
     },
   });
 
@@ -82,7 +109,9 @@ export function BatchDetailPage() {
   }
 
   if (!batch || !attendanceData) {
-    return <div className="text-center py-20 text-gray-500">Batch not found</div>;
+    return (
+      <div className="text-center py-20 text-gray-500">Batch not found</div>
+    );
   }
 
   return (
@@ -90,7 +119,7 @@ export function BatchDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/batches')}
+          onClick={() => navigate("/batches")}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -99,12 +128,18 @@ export function BatchDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {batch.training?.name}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">{batch.training?.code}</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            {batch.training?.code}
+          </p>
         </div>
 
         {canManage && (
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => generateMutation.mutate()} isLoading={generateMutation.isPending}>
+            <Button
+              variant="secondary"
+              onClick={() => generateMutation.mutate()}
+              isLoading={generateMutation.isPending}
+            >
               <Award className="w-4 h-4 mr-2" />
               Generate Certificates
             </Button>
@@ -123,7 +158,8 @@ export function BatchDetailPage() {
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Calendar className="w-4 h-4" />
               <span>
-                {format(new Date(batch.startDate), 'MMM d')} - {format(new Date(batch.endDate), 'MMM d, yyyy')}
+                {format(new Date(batch.startDate), "MMM d")} -{" "}
+                {format(new Date(batch.endDate), "MMM d, yyyy")}
               </span>
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -136,7 +172,9 @@ export function BatchDetailPage() {
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Users className="w-4 h-4" />
-              <span>{attendanceData.attendance.length} / {batch.capacity} enrolled</span>
+              <span>
+                {attendanceData.attendance.length} / {batch.capacity} enrolled
+              </span>
             </div>
           </div>
         </CardContent>
@@ -157,24 +195,41 @@ export function BatchDetailPage() {
                   <th className="text-left py-3 px-4 font-medium text-gray-500 sticky left-0 bg-gray-50 dark:bg-gray-900">
                     Employee
                   </th>
-                  {Array.from({ length: attendanceData.durationDays }, (_, i) => (
-                    <th key={i} className="text-center py-3 px-2 font-medium text-gray-500 min-w-[60px]">
-                      Day {i + 1}
-                    </th>
-                  ))}
-                  <th className="text-center py-3 px-4 font-medium text-gray-500">Total</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-500">Status</th>
+                  {Array.from(
+                    { length: attendanceData.durationDays },
+                    (_, i) => (
+                      <th
+                        key={i}
+                        className="text-center py-3 px-2 font-medium text-gray-500 min-w-[60px]"
+                      >
+                        Day {i + 1}
+                      </th>
+                    ),
+                  )}
+                  <th className="text-center py-3 px-4 font-medium text-gray-500">
+                    Total
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-500">
+                    Status
+                  </th>
                   {canManage && <th className="py-3 px-4"></th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {attendanceData.attendance.map((record) => (
-                  <tr key={record.employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <tr
+                    key={record.employee.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
                     <td className="py-3 px-4 sticky left-0 bg-white dark:bg-gray-900">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                           {record.employee.photoUrl ? (
-                            <img src={record.employee.photoUrl} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={record.employee.photoUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <User className="w-4 h-4 text-gray-400" />
                           )}
@@ -183,26 +238,30 @@ export function BatchDetailPage() {
                           <div className="font-medium text-gray-900 dark:text-white">
                             {record.employee.fullName}
                           </div>
-                          <div className="text-xs text-gray-500">{record.employee.sapId}</div>
+                          <div className="text-xs text-gray-500">
+                            {record.employee.sapId}
+                          </div>
                         </div>
                       </div>
                     </td>
                     {record.days.map((day) => (
                       <td key={day.day} className="text-center py-3 px-2">
                         <button
-                          onClick={() => markMutation.mutate({
-                            employeeId: record.employee.id,
-                            dayNumber: day.day,
-                            isPresent: !day.isPresent,
-                          })}
+                          onClick={() =>
+                            markMutation.mutate({
+                              employeeId: record.employee.id,
+                              dayNumber: day.day,
+                              isPresent: !day.isPresent,
+                            })
+                          }
                           className={cn(
-                            'w-8 h-8 rounded-lg transition-colors flex items-center justify-center mx-auto',
+                            "w-8 h-8 rounded-lg transition-colors flex items-center justify-center mx-auto",
                             day.isPresent
-                              ? 'bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700'
+                              ? "bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700",
                           )}
                         >
-                          {day.isPresent ? <Check className="w-4 h-4" /> : '-'}
+                          {day.isPresent ? <Check className="w-4 h-4" /> : "-"}
                         </button>
                       </td>
                     ))}
@@ -224,7 +283,9 @@ export function BatchDetailPage() {
                       {canManage && (
                         <button
                           onClick={() => {
-                            if (confirm('Remove this employee from the batch?')) {
+                            if (
+                              confirm("Remove this employee from the batch?")
+                            ) {
                               removeMutation.mutate(record.employee.id);
                             }
                           }}
@@ -242,7 +303,8 @@ export function BatchDetailPage() {
 
           {attendanceData.attendance.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              No employees enrolled. Click "Enroll Employees" to add participants.
+              No employees enrolled. Click "Enroll Employees" to add
+              participants.
             </div>
           )}
         </CardContent>
@@ -255,8 +317,10 @@ export function BatchDetailPage() {
           onClose={() => setShowEnrollModal(false)}
           onSuccess={() => {
             setShowEnrollModal(false);
-            queryClient.invalidateQueries({ queryKey: ['batch', id] });
-            queryClient.invalidateQueries({ queryKey: ['batchAttendance', id] });
+            queryClient.invalidateQueries({ queryKey: ["batch", id] });
+            queryClient.invalidateQueries({
+              queryKey: ["batchAttendance", id],
+            });
           }}
         />
       )}
@@ -274,31 +338,37 @@ function EnrollModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Employee[]>([]);
 
   // Search employees
   const { data: searchResults } = useQuery({
-    queryKey: ['employeeSearch', search],
+    queryKey: ["employeeSearch", search],
     queryFn: () => searchEmployees(search),
     enabled: search.length >= 2,
   });
 
   // Enroll mutation
   const enrollMutation = useMutation({
-    mutationFn: () => enrollEmployees(batchId, selected.map(e => e.id)),
+    mutationFn: () =>
+      enrollEmployees(
+        batchId,
+        selected.map((e) => e.id),
+      ),
     onSuccess: () => {
-      toast.success('Employees enrolled successfully');
+      toast.success("Employees enrolled successfully");
       onSuccess();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error?.message || 'Failed to enroll employees');
+      toast.error(
+        error.response?.data?.error?.message || "Failed to enroll employees",
+      );
     },
   });
 
   const toggleEmployee = (employee: Employee) => {
-    if (selected.find(e => e.id === employee.id)) {
-      setSelected(selected.filter(e => e.id !== employee.id));
+    if (selected.find((e) => e.id === employee.id)) {
+      setSelected(selected.filter((e) => e.id !== employee.id));
     } else {
       setSelected([...selected, employee]);
     }
@@ -350,26 +420,34 @@ function EnrollModal({
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {searchResults?.map((emp) => {
-                const isSelected = selected.some(e => e.id === emp.id);
+                const isSelected = selected.some((e) => e.id === emp.id);
                 return (
                   <button
                     key={emp.id}
                     onClick={() => toggleEmployee(emp)}
                     className={cn(
-                      'flex items-center gap-3 w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800',
-                      isSelected && 'bg-blue-50 dark:bg-blue-900/20'
+                      "flex items-center gap-3 w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800",
+                      isSelected && "bg-blue-50 dark:bg-blue-900/20",
                     )}
                   >
                     <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                       {emp.photoUrl ? (
-                        <img src={emp.photoUrl} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={emp.photoUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <User className="w-4 h-4 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-white truncate">{emp.fullName}</div>
-                      <div className="text-xs text-gray-500 truncate">{emp.sapId} • {emp.department?.name}</div>
+                      <div className="font-medium text-gray-900 dark:text-white truncate">
+                        {emp.fullName}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {emp.sapId} • {emp.department?.name}
+                      </div>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-blue-600" />}
                   </button>
@@ -381,7 +459,12 @@ function EnrollModal({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            className="flex-1"
+          >
             Cancel
           </Button>
           <Button
@@ -390,7 +473,7 @@ function EnrollModal({
             disabled={selected.length === 0}
             className="flex-1"
           >
-            Enroll {selected.length} Employee{selected.length !== 1 ? 's' : ''}
+            Enroll {selected.length} Employee{selected.length !== 1 ? "s" : ""}
           </Button>
         </div>
       </div>
