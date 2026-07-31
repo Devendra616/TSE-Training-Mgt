@@ -13,6 +13,7 @@
     "db:sync": "tsx src/utils/syncDatabase.ts",
     "db:migrate": "npm run db:sync",
     "db:seed": "tsx src/utils/seed.ts",
+    "db:seedUsers": "tsx src/utils/seedUsers.ts",
     "db:reset": "npm run db:sync && npm run db:seed"
   },
   "dependencies": {

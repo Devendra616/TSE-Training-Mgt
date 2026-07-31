@@ -173,7 +173,7 @@ async function seedDatabase(): Promise<void> {
 
     let createdUsers = 0;
     for (const seed of userSeeds) {
-      const [user, created] = await User.findOrCreate({
+      const [created] = await User.findOrCreate({
         where: { email: seed.email },
         defaults: {
           email: seed.email,
@@ -181,7 +181,7 @@ async function seedDatabase(): Promise<void> {
           fullName: seed.fullName,
           role: seed.role,
           employeeId: seed.employeeSapId
-            ? employeeMap.get(seed.employeeSapId) ?? null
+            ? (employeeMap.get(seed.employeeSapId) ?? null)
             : null,
           isActive: seed.isActive,
         },
@@ -271,7 +271,7 @@ async function seedDatabase(): Promise<void> {
 
     let createdTrainings = 0;
     for (const seed of trainingSeeds) {
-      const [training, created] = await Training.findOrCreate({
+      const [created] = await Training.findOrCreate({
         where: { code: seed.code },
         defaults: {
           name: seed.name,
