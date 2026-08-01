@@ -26,6 +26,11 @@ function createApp(): Express {
   // Security middleware
   app.use(
     helmet({
+      contentSecurityPolicy: {
+        directives: {
+          frameAncestors: ["'self'", config.frontendUrl],
+        },
+      },
       crossOriginResourcePolicy: { policy: "cross-origin" },
     }),
   );

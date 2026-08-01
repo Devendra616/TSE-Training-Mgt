@@ -292,12 +292,6 @@ async function seedDatabase(): Promise<void> {
     );
 
     logger.info("Database seeding completed successfully!");
-    logger.info("");
-    logger.info("=== Login Credentials ===");
-    logger.info("Admin: admin@mining.com / password123");
-    logger.info("Training Officer: officer@mining.com / password123");
-    logger.info("Mines Manager: manager@mining.com / password123");
-    logger.info("========================");
 
     process.exit(0);
   } catch (error) {

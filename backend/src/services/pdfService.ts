@@ -7,6 +7,7 @@ interface CertificateData {
   certificateNumber: string;
   employeeName: string;
   employeeSapId: string;
+  employeeTokenNo: string | null;
   employeeDesignation: string;
   trainingName: string;
   trainingType: string;
@@ -45,6 +46,7 @@ export async function generateCertificatePDF(
     certificateNumber: (certificate as any).certificateNumber || "DRAFT",
     employeeName: employee.fullName,
     employeeSapId: employee.sapId,
+    employeeTokenNo: employee.tokenNo,
     employeeDesignation: employee.designation,
     trainingName: training.name,
     trainingType: training.trainingType,
@@ -312,7 +314,7 @@ function generateCertificateHTML(data: CertificateData): string {
         <div class="presented-to">This is to certify that</div>
         <div class="name">${data.employeeName}</div>
         <div class="designation">${data.employeeDesignation}</div>
-        <div class="sap-id">SAP ID: ${data.employeeSapId}</div>
+        <div class="sap-id">SAP ID: ${data.employeeSapId}${data.employeeTokenNo ? ` (${data.employeeTokenNo})` : ""}</div>
         
         <div class="description">
           has successfully completed the <span class="training-name">${data.trainingName}</span> 

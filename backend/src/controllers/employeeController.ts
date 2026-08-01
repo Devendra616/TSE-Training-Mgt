@@ -20,11 +20,12 @@ export const getAllEmployees = asyncHandler(async (req: Request, res: Response) 
       { fullName: { [Op.iLike]: `%${search}%` } },
       { sapId: { [Op.iLike]: `%${search}%` } },
       { designation: { [Op.iLike]: `%${search}%` } },
+      { tokenNo: { [Op.iLike]: `%${search}%` } },
     ];
   }
 
   // Validate sort field to prevent SQL injection or errors
-  const allowedSortFields = ['fullName', 'sapId', 'designation', 'createdAt', 'status'];
+  const allowedSortFields = ['fullName', 'sapId', 'tokenNo', 'designation', 'createdAt', 'status'];
   const sortField = allowedSortFields.includes(String(sortBy)) ? String(sortBy) : 'fullName';
   const order = String(sortOrder).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
@@ -92,9 +93,10 @@ export const searchEmployees = asyncHandler(async (req: Request, res: Response) 
       [Op.or]: [
         { fullName: { [Op.iLike]: `%${q}%` } },
         { sapId: { [Op.iLike]: `%${q}%` } },
+        { tokenNo: { [Op.iLike]: `%${q}%` } },
       ],
     },
-    attributes: ['id', 'sapId', 'fullName', 'designation', 'photoUrl'],
+    attributes: ['id', 'sapId', 'tokenNo', 'fullName', 'designation', 'photoUrl'],
     include: [{ model: Department, as: 'department', attributes: ['id', 'name'] }],
     limit: 10,
   });
@@ -110,7 +112,8 @@ export const searchEmployees = asyncHandler(async (req: Request, res: Response) 
  * POST /api/employees
  */
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
-  const { sapId, fullName, designation, departmentId, photoUrl } = req.body;
+  const { sapId, tokenNo, fullName, designation, departmentId, photoUrl } = req.body;
+  const normalizedTokenNo = normalizeTokenNo(tokenNo);
 
   // Validate required fields
   if (!sapId || !fullName || !designation || !departmentId) {
@@ -123,6 +126,8 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
     throw new ConflictError('Employee with this SAP ID already exists');
   }
 
+  await validateTokenNo(normalizedTokenNo);
+
   // Verify department exists
   const department = await Department.findByPk(departmentId);
   if (!department) {
@@ -131,6 +136,7 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
 
   const employee = await Employee.create({
     sapId,
+    tokenNo: normalizedTokenNo,
     fullName: fullName.trim(),
     designation: designation.trim(),
     departmentId,
@@ -152,11 +158,17 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
  */
 export const updateEmployee = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { sapId, fullName, designation, departmentId, photoUrl, status } = req.body;
+  const { sapId, tokenNo, fullName, designation, departmentId, photoUrl, status } = req.body;
 
   const employee = await Employee.findByPk(id);
   if (!employee) {
     throw new NotFoundError('Employee');
+  }
+
+  const normalizedTokenNo = tokenNo !== undefined ? normalizeTokenNo(tokenNo) : employee.tokenNo;
+
+  if (tokenNo !== undefined) {
+    await validateTokenNo(normalizedTokenNo, employee.id);
   }
 
   // Check SAP ID uniqueness if changing
@@ -177,6 +189,7 @@ export const updateEmployee = asyncHandler(async (req: Request, res: Response) =
 
   await employee.update({
     sapId: sapId || employee.sapId,
+    tokenNo: tokenNo !== undefined ? normalizedTokenNo : employee.tokenNo,
     fullName: fullName?.trim() || employee.fullName,
     designation: designation?.trim() || employee.designation,
     departmentId: departmentId || employee.departmentId,
@@ -191,6 +204,34 @@ export const updateEmployee = asyncHandler(async (req: Request, res: Response) =
     data: { employee },
   });
 });
+
+function normalizeTokenNo(tokenNo: unknown): string | null {
+  if (typeof tokenNo !== 'string' || !tokenNo.trim()) {
+    return null;
+  }
+
+  return tokenNo.trim().toUpperCase();
+}
+
+async function validateTokenNo(tokenNo: string | null | undefined, employeeId?: number) {
+  if (!tokenNo) {
+    return;
+  }
+
+  if (!/^[A-Z]\d{4}$/.test(tokenNo)) {
+    throw new ValidationError('Token No must start with a letter followed by 4 digits');
+  }
+
+  const where: any = { tokenNo };
+  if (employeeId) {
+    where.id = { [Op.ne]: employeeId };
+  }
+
+  const existing = await Employee.findOne({ where });
+  if (existing) {
+    throw new ConflictError('Employee with this Token No already exists');
+  }
+}
 
 /**
  * Delete (deactivate) employee

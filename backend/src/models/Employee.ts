@@ -11,6 +11,7 @@ export enum EmployeeStatus {
 export interface EmployeeAttributes {
   id: number;
   sapId: string;
+  tokenNo: string | null;
   fullName: string;
   designation: string;
   departmentId: number;
@@ -22,7 +23,7 @@ export interface EmployeeAttributes {
 
 export interface EmployeeCreationAttributes extends Optional<
   EmployeeAttributes,
-  "id" | "photoUrl" | "status" | "createdAt" | "updatedAt"
+  "id" | "tokenNo" | "photoUrl" | "status" | "createdAt" | "updatedAt"
 > {}
 
 /**
@@ -34,6 +35,7 @@ export class Employee
 {
   declare id: number;
   declare sapId: string;
+  declare tokenNo: string | null;
   declare fullName: string;
   declare designation: string;
   declare departmentId: number;
@@ -54,6 +56,21 @@ Employee.init(
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
+    },
+    tokenNo: {
+      type: DataTypes.STRING(5),
+      allowNull: true,
+      field: "token_no",
+      validate: {
+        is: /^[A-Za-z]\d{4}$/,
+      },
+      set(value: string | null | undefined) {
+        const normalized =
+          typeof value === "string" && value.trim()
+            ? value.trim().toUpperCase()
+            : null;
+        this.setDataValue("tokenNo", normalized);
+      },
     },
     fullName: {
       type: DataTypes.STRING(255),

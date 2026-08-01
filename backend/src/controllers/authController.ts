@@ -8,6 +8,35 @@ import { AuthError, ValidationError } from "../utils/errors.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { logUserAction } from "../utils/logger.js";
 
+const getJwtTtlSeconds = (): number => {
+  const expiresIn = config.jwt.expiresIn;
+
+  if (typeof expiresIn === "number") {
+    return expiresIn;
+  }
+
+  const match = String(expiresIn)
+    .trim()
+    .match(/^(\d+)([smhd])?$/);
+
+  if (!match) {
+    return 60 * 60;
+  }
+
+  const value = Number(match[1]);
+  const unit = match[2] || "s";
+  const multipliers = {
+    s: 1,
+    m: 60,
+    h: 60 * 60,
+    d: 24 * 60 * 60,
+  };
+
+  return value * multipliers[unit as keyof typeof multipliers];
+};
+
+const jwtTtlSeconds = getJwtTtlSeconds();
+
 /**
  * Login user
  * POST /api/auth/login
@@ -64,7 +93,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     httpOnly: true,
     secure: config.env === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 1000, // 1 hour
+    maxAge: jwtTtlSeconds * 1000,
   });
 
   res.json({
@@ -88,8 +117,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies?.token;
 
   if (token) {
-    // Blacklist the token (expires in 1 hour)
-    await cache.set(`blacklist:${token}`, true, 3600);
+    await cache.set(`blacklist:${token}`, true, jwtTtlSeconds);
 
     // Log action
     if (req.user) {

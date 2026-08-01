@@ -20,6 +20,7 @@ export interface EmployeeCompliance {
   employee: {
     id: number;
     sapId: string;
+    tokenNo: string | null;
     fullName: string;
     designation: string;
     photoUrl: string | null;
@@ -142,6 +143,7 @@ export async function getEmployeeCompliance(
     employee: {
       id: employee.id,
       sapId: employee.sapId,
+      tokenNo: employee.tokenNo,
       fullName: employee.fullName,
       designation: employee.designation,
       photoUrl: employee.photoUrl,
@@ -252,7 +254,7 @@ export async function getUpcomingDueDates(limit: number = 10): Promise<any[]> {
       {
         model: Employee,
         as: "employee",
-        attributes: ["id", "sapId", "fullName", "designation"],
+        attributes: ["id", "sapId", "tokenNo", "fullName", "designation"],
       },
       {
         model: Batch,
@@ -294,6 +296,7 @@ export async function getOverdueEmployees(): Promise<any[]> {
     SELECT 
       e.id as employee_id,
       e.sap_id,
+      e.token_no,
       e.full_name,
       e.designation,
       t.id as training_id,

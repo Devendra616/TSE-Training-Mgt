@@ -4,6 +4,7 @@ import type { Department } from "./departments";
 export interface Employee {
   id: number;
   sapId: string;
+  tokenNo: string | null;
   fullName: string;
   designation: string;
   departmentId: number;
@@ -25,6 +26,7 @@ export interface EmployeesResponse {
 
 export interface CreateEmployeeData {
   sapId: string;
+  tokenNo?: string | null;
   fullName: string;
   designation: string;
   departmentId: number;

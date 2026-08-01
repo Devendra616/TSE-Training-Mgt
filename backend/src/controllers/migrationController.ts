@@ -243,6 +243,10 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
       }
 
       const parsedIssueDate = new Date(cert.issueDate);
+      if (!isValid(parsedIssueDate)) {
+        throw new Error("Invalid issue date");
+      }
+
       const finalValidFrom = cert.validFrom
         ? new Date(cert.validFrom)
         : parsedIssueDate;

@@ -65,6 +65,11 @@ router.post(
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
   [
     body('sapId').notEmpty().trim().withMessage('SAP ID is required'),
+    body('tokenNo')
+      .optional({ nullable: true, checkFalsy: true })
+      .trim()
+      .matches(/^[A-Za-z]\d{4}$/)
+      .withMessage('Token No must start with a letter followed by 4 digits'),
     body('fullName').notEmpty().trim().withMessage('Full name is required'),
     body('designation').notEmpty().trim().withMessage('Designation is required'),
     body('departmentId').isInt().withMessage('Valid department ID is required'),
@@ -84,6 +89,11 @@ router.put(
   [
     param('id').isInt().withMessage('Valid employee ID is required'),
     body('sapId').optional().notEmpty().trim(),
+    body('tokenNo')
+      .optional({ nullable: true, checkFalsy: true })
+      .trim()
+      .matches(/^[A-Za-z]\d{4}$/)
+      .withMessage('Token No must start with a letter followed by 4 digits'),
     body('fullName').optional().notEmpty().trim(),
     body('designation').optional().notEmpty().trim(),
     body('departmentId').optional().isInt(),

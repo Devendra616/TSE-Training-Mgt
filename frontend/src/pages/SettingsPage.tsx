@@ -316,6 +316,14 @@ function UsersSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowModal(false);
+      toast.success("User created successfully");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Failed to create user",
+      );
     },
   });
 
@@ -326,12 +334,30 @@ function UsersSettings() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowModal(false);
       setEditingUser(null);
+      toast.success("User updated successfully");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Failed to update user",
+      );
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deactivated successfully");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Failed to deactivate user",
+      );
+    },
   });
 
   const resetPasswordMutation = useMutation({
@@ -340,7 +366,14 @@ function UsersSettings() {
     onSuccess: () => {
       setShowResetModal(false);
       setSelectedUserForReset(null);
-      alert("Password reset successfully");
+      toast.success("Password reset successfully");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Failed to reset password",
+      );
     },
   });
 
@@ -522,101 +555,127 @@ function UserModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user && formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
     onSubmit(formData);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {user ? "Edit User" : "Add User"}
-          </h2>
-          <button onClick={onClose}>
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Full Name"
-            value={formData.fullName}
-            onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
-            }
-            required
-          />
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            required
-          />
-          {!user && (
-            <Input
-              label="Initial Password"
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              required
-              minLength={8}
-            />
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Role
-            </label>
-            <select
-              value={formData.role}
-              onChange={(e) =>
-                setFormData({ ...formData, role: e.target.value })
-              }
-              className="flex h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
-            >
-              <option value="admin">Admin</option>
-              <option value="training_officer">Training Officer</option>
-              <option value="mines_manager">Mines Manager</option>
-            </select>
-          </div>
-          {user && (
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <label
-                htmlFor="isActive"
-                className="text-sm text-gray-700 dark:text-gray-300"
-              >
-                Active Account
-              </label>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 px-4 py-6">
+      <div className="flex min-h-full items-center justify-center">
+        <button
+          type="button"
+          className="fixed inset-0 cursor-default"
+          onClick={onClose}
+          aria-label="Close modal"
+        />
+        <div className="relative z-10 flex w-full max-w-md flex-col rounded-lg bg-white shadow-2xl dark:bg-gray-900">
+          <div className="shrink-0 flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {user ? "Edit User" : "Add User"}
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {user
+                  ? "Update account details and access."
+                  : "Create a login account and assign a role."}
+              </p>
             </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <Button
+            <button
               type="button"
-              variant="secondary"
               onClick={onClose}
-              className="flex-1"
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              aria-label="Close"
             >
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={isLoading} className="flex-1">
-              {user ? "Update" : "Create"}
-            </Button>
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit} className="flex flex-col">
+            <div className="space-y-4 px-6 py-5">
+              <Input
+                label="Full Name"
+                value={formData.fullName}
+                onChange={(e) =>
+                  setFormData({ ...formData, fullName: e.target.value })
+                }
+                required
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
+              />
+              {!user && (
+                <Input
+                  label="Initial Password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                  minLength={8}
+                />
+              )}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Role
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
+                  className="flex h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="training_officer">Training Officer</option>
+                  <option value="mines_manager">Mines Manager</option>
+                </select>
+              </div>
+              {user && (
+                <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-800">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={formData.isActive}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isActive: e.target.checked })
+                    }
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <label
+                    htmlFor="isActive"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Active Account
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div className="shrink-0 flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" isLoading={isLoading} className="flex-1">
+                {user ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -637,6 +696,10 @@ function PasswordResetModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
     onSubmit(newPassword);
   };
 

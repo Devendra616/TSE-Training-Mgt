@@ -26,6 +26,7 @@ import {
 import { getDepartments, type Department } from "@/services/departments";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/utils/cn";
+import { formatSapIdWithToken } from "@/utils/employeeDisplay";
 
 export function EmployeesPage() {
   const queryClient = useQueryClient();
@@ -162,7 +163,7 @@ export function EmployeesPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search by name, SAP ID, or designation..."
+                placeholder="Search by name, SAP ID, Token No, or designation..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -263,7 +264,7 @@ export function EmployeesPage() {
                           </div>
                         </td>
                         <td className="py-3 px-4 text-gray-600 dark:text-gray-300 font-mono">
-                          {employee.sapId}
+                          {formatSapIdWithToken(employee)}
                         </td>
                         <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                           {employee.designation}
@@ -386,6 +387,7 @@ function EmployeeModal({
 }) {
   const [formData, setFormData] = useState<CreateEmployeeData>({
     sapId: employee?.sapId || "",
+    tokenNo: employee?.tokenNo || "",
     fullName: employee?.fullName || "",
     designation: employee?.designation || "",
     departmentId: employee?.departmentId || departments[0]?.id || 0,
@@ -412,6 +414,16 @@ function EmployeeModal({
               setFormData({ ...formData, sapId: e.target.value })
             }
             required
+          />
+          <Input
+            label="Token No"
+            value={formData.tokenNo || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, tokenNo: e.target.value })
+            }
+            placeholder="e.g., A1359"
+            pattern="[A-Za-z][0-9]{4}"
+            maxLength={5}
           />
           <Input
             label="Full Name"

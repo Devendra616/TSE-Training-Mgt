@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { getCertificates, bulkSubmit, type WorkflowStatus } from '@/services/certificates';
 import { cn } from '@/utils/cn';
+import { formatSapIdWithToken } from '@/utils/employeeDisplay';
 
 const STATUS_CONFIG: Record<WorkflowStatus, { label: string; color: string; icon: any }> = {
   draft: { label: 'Draft', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: Clock },
@@ -174,7 +175,7 @@ export function CertificatesPage() {
                             <div className="font-medium text-gray-900 dark:text-white">
                               {cert.employee?.fullName || 'Unknown Employee'}
                             </div>
-                            <div className="text-xs text-gray-500">{cert.employee?.sapId}</div>
+                            <div className="text-xs text-gray-500">{formatSapIdWithToken(cert.employee)}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">

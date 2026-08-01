@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { getPendingApprovals, approveCertificate, rejectCertificate, bulkApprove } from '@/services/certificates';
+import { formatSapIdWithToken } from '@/utils/employeeDisplay';
 
 export function ApprovalsPage() {
   const queryClient = useQueryClient();
@@ -153,7 +154,7 @@ export function ApprovalsPage() {
                       {cert.employee?.fullName}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {cert.employee?.sapId} • {cert.training?.name}
+                      {formatSapIdWithToken(cert.employee)} • {cert.training?.name}
                     </div>
                   </div>
 

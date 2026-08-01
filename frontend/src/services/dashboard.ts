@@ -27,7 +27,7 @@ export interface DashboardOverview {
   }[];
   upcomingDue: {
     id: number;
-    employee: { fullName: string; sapId: string };
+    employee: { fullName: string; sapId: string; tokenNo: string | null };
     training: { name: string; code: string };
     validUntil: string;
     complianceStatus: 'compliant' | 'due_soon' | 'overdue';

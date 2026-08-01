@@ -23,7 +23,7 @@ export const getAllCertificates = asyncHandler(async (req: Request, res: Respons
     where,
     include: [
       { model: Training, as: 'training', attributes: ['id', 'name', 'code', 'trainingType'] },
-      { model: Employee, as: 'employee', attributes: ['id', 'sapId', 'fullName', 'designation'] },
+      { model: Employee, as: 'employee', attributes: ['id', 'sapId', 'tokenNo', 'fullName', 'designation'] },
       { model: Batch, as: 'batch', attributes: ['id', 'startDate', 'endDate', 'venue'] },
     ],
     order: [['createdAt', 'DESC']],
@@ -44,7 +44,7 @@ export const getPendingApprovals = asyncHandler(async (_req: Request, res: Respo
     where: { workflowStatus: WorkflowStatus.PENDING_APPROVAL },
     include: [
       { model: Training, as: 'training', attributes: ['id', 'name', 'code', 'trainingType'] },
-      { model: Employee, as: 'employee', attributes: ['id', 'sapId', 'fullName', 'designation', 'photoUrl'] },
+      { model: Employee, as: 'employee', attributes: ['id', 'sapId', 'tokenNo', 'fullName', 'designation', 'photoUrl'] },
       { model: Batch, as: 'batch', attributes: ['id', 'startDate', 'endDate', 'venue', 'instructorName'] },
     ],
     order: [['createdAt', 'ASC']], // Oldest first for FIFO approval

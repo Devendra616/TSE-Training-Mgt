@@ -28,6 +28,7 @@ import { generateCertificates } from "@/services/certificates";
 import { searchEmployees, type Employee } from "@/services/employees";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/utils/cn";
+import { formatSapIdWithToken } from "@/utils/employeeDisplay";
 
 export function BatchDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -239,7 +240,7 @@ export function BatchDetailPage() {
                             {record.employee.fullName}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {record.employee.sapId}
+                            {formatSapIdWithToken(record.employee)}
                           </div>
                         </div>
                       </div>
@@ -384,7 +385,7 @@ function EnrollModal({
 
         {/* Search */}
         <Input
-          placeholder="Search by name or SAP ID..."
+          placeholder="Search by name, SAP ID, or Token No..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="mb-4"
@@ -446,7 +447,7 @@ function EnrollModal({
                         {emp.fullName}
                       </div>
                       <div className="text-xs text-gray-500 truncate">
-                        {emp.sapId} • {emp.department?.name}
+                        {formatSapIdWithToken(emp)} • {emp.department?.name}
                       </div>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-blue-600" />}

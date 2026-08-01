@@ -20,8 +20,10 @@ import {
   getMigrationStats,
   type MigrateCertificateData,
 } from "@/services/migration";
+import { getBackendAssetUrl } from "@/services/api";
 import { searchEmployees, type Employee } from "@/services/employees";
 import { getTrainings } from "@/services/trainings";
+import { formatSapIdWithToken } from "@/utils/employeeDisplay";
 
 export function MigrationPage() {
   const queryClient = useQueryClient();
@@ -38,6 +40,7 @@ export function MigrationPage() {
     null,
   );
   const [employeeSearch, setEmployeeSearch] = useState("");
+  const previewUrl = fileUrl ? getBackendAssetUrl(fileUrl) : null;
 
   // Fetch data
   const { data: stats } = useQuery({
@@ -231,13 +234,13 @@ export function MigrationPage() {
                   {mimeType === "application/pdf" ||
                   file?.type === "application/pdf" ? (
                     <iframe
-                      src={`${import.meta.env.VITE_API_URL || ""}${fileUrl}`}
+                      src={previewUrl || ""}
                       className="w-full h-full"
                       title="PDF Preview"
                     />
                   ) : (
                     <img
-                      src={`${import.meta.env.VITE_API_URL || ""}${fileUrl}`}
+                      src={previewUrl || ""}
                       alt="Certificate preview"
                       className="w-full h-full object-contain"
                     />
@@ -284,7 +287,7 @@ export function MigrationPage() {
                         {selectedEmployee.fullName}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {selectedEmployee.sapId}
+                        {formatSapIdWithToken(selectedEmployee)}
                       </div>
                     </div>
                     <button
@@ -298,7 +301,7 @@ export function MigrationPage() {
                 ) : (
                   <div className="relative">
                     <Input
-                      placeholder="Search by name or SAP ID..."
+                      placeholder="Search by name, SAP ID, or Token No..."
                       value={employeeSearch}
                       onChange={(e) => setEmployeeSearch(e.target.value)}
                       icon={<Search className="w-4 h-4" />}
@@ -314,7 +317,7 @@ export function MigrationPage() {
                           >
                             <div className="font-medium">{emp.fullName}</div>
                             <div className="text-sm text-gray-500">
-                              {emp.sapId}
+                              {formatSapIdWithToken(emp)}
                             </div>
                           </button>
                         ))}

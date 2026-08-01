@@ -25,7 +25,7 @@ export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
 
   res.json({
     success: true,
-    data: { users },
+    data: { users, total: users.length },
   });
 });
 
@@ -98,6 +98,9 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        isActive: user.isActive,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
       },
     },
   });
@@ -150,6 +153,8 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
         fullName: user.fullName,
         role: user.role,
         isActive: user.isActive,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
       },
     },
   });

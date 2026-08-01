@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 import { config } from "./index.js";
 import { logger } from "../utils/logger.js";
+import { ensureEmployeeTokenNoColumn } from "../utils/ensureEmployeeTokenNoColumn.js";
 
 /**
  * PostgreSQL database connection using Sequelize ORM
@@ -35,6 +36,7 @@ export async function connectDatabase(): Promise<void> {
     logger.info("Database connection established successfully");
 
     await sequelize.sync();
+    await ensureEmployeeTokenNoColumn(sequelize);
     logger.info("Database schema synchronized successfully");
   } catch (error) {
     logger.error("Unable to connect to database:", error);
