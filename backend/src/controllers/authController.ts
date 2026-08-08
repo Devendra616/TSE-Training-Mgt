@@ -91,7 +91,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   // Set HTTP-only cookie
   res.cookie("token", token, {
     httpOnly: true,
-    secure: config.env === "production",
+    secure: process.env.COOKIE_SECURE === "true",
     sameSite: "lax",
     maxAge: jwtTtlSeconds * 1000,
   });
