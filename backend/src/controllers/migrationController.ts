@@ -56,7 +56,7 @@ export const checkDuplicate = asyncHandler(
     // Check by certificate number if provided
     if (certificateNumber) {
       const existing = await Certificate.findOne({
-        where: { certificateNumber },
+        where: { certNumber: certificateNumber },
       });
 
       if (existing) {
@@ -140,7 +140,7 @@ export const migrateCertificate = asyncHandler(
     // Check for duplicate
     if (certificateNumber) {
       const existing = await Certificate.findOne({
-        where: { certificateNumber },
+        where: { certNumber: certificateNumber },
       });
       if (existing) {
         throw new ConflictError("Certificate number already exists");
@@ -166,7 +166,7 @@ export const migrateCertificate = asyncHandler(
       batchId: null as number | null, // No batch for migrated certificates
       workflowStatus: WorkflowStatus.APPROVED, // Migrated = already approved
       attendanceStatus: AttendanceStatus.PRESENT,
-      certificateNumber: certificateNumber || null,
+      certNumber: certificateNumber || null,
       daysAttended: daysAttended || training.durationDays,
       issueDate: parsedIssueDate,
       validFrom: finalValidFrom,
@@ -235,7 +235,7 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
       // Check duplicate
       if (cert.certificateNumber) {
         const existing = await Certificate.findOne({
-          where: { certificateNumber: cert.certificateNumber },
+          where: { certNumber: cert.certificateNumber },
         });
         if (existing) {
           throw new Error("Certificate number already exists");
@@ -260,7 +260,7 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
         batchId: null as number | null as number | null,
         workflowStatus: WorkflowStatus.APPROVED,
         attendanceStatus: AttendanceStatus.PRESENT,
-        certificateNumber: cert.certificateNumber || null,
+        certNumber: cert.certificateNumber || null,
         daysAttended: cert.daysAttended || training.durationDays,
         issueDate: parsedIssueDate,
         validFrom: finalValidFrom,
