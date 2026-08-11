@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
 import { Plus, Search, Edit2, Trash2, Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -47,6 +48,14 @@ export function TrainingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trainings"] });
       setShowModal(false);
+      toast.success("Training created");
+    },
+    onError: (err: any) => {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to create training";
+      toast.error(message);
     },
   });
 
@@ -63,6 +72,14 @@ export function TrainingsPage() {
       queryClient.invalidateQueries({ queryKey: ["trainings"] });
       setShowModal(false);
       setEditingTraining(null);
+      toast.success("Training updated");
+    },
+    onError: (err: any) => {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update training";
+      toast.error(message);
     },
   });
 
@@ -71,6 +88,14 @@ export function TrainingsPage() {
     mutationFn: deleteTraining,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["trainings"] });
+      toast.success("Training deleted");
+    },
+    onError: (err: any) => {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to delete training";
+      toast.error(message);
     },
   });
 
@@ -230,7 +255,7 @@ export function TrainingsPage() {
               createMutation.mutate(data);
             }
           }}
-          isLoading={createMutation.isPending || updateMutation.isPending}
+          isLoading={createMutation.isLoading || updateMutation.isLoading}
         />
       )}
     </div>
@@ -258,9 +283,29 @@ function TrainingModal({
     isMandatory: training?.isMandatory || false,
     description: training?.description || "",
   });
+  const [errors, setErrors] = useState<{ name?: string; code?: string }>({});
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Client-side validation
+    const nextErrors: { name?: string; code?: string } = {};
+    if (!formData.name || !formData.name.trim()) {
+      nextErrors.name = "Training name is required";
+    }
+    if (!formData.code || !formData.code.trim()) {
+      nextErrors.code = "Training code is required";
+    }
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      // focus first error
+      if (nextErrors.name && nameRef.current) {
+        nameRef.current.focus();
+      }
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -278,6 +323,8 @@ function TrainingModal({
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., First Aid Refresher"
             required
+            error={errors.name}
+            ref={nameRef}
           />
           <Input
             label="Code"
@@ -287,6 +334,7 @@ function TrainingModal({
             }
             placeholder="e.g., FA-REF"
             required
+            error={errors.code}
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">

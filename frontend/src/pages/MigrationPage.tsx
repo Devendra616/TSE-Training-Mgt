@@ -180,7 +180,7 @@ export function MigrationPage() {
       {/* Split screen layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Document preview */}
-        <Card className="h-[calc(100vh-280px)] flex flex-col">
+        <Card className="h-[calc(100vh-150px)] flex flex-col">
           <CardHeader>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Document Preview
@@ -252,7 +252,7 @@ export function MigrationPage() {
         </Card>
 
         {/* Right: Data entry form */}
-        <Card className="h-[calc(100vh-280px)] flex flex-col">
+        <Card className="h-[calc(100vh-150px)] flex flex-col">
           <CardHeader>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Certificate Data

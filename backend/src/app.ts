@@ -23,6 +23,9 @@ import apiRoutes from "./routes/index.js";
 function createApp(): Express {
   const app = express();
 
+  // Trust the first reverse proxy (Nginx Proxy Manager)
+  app.set("trust proxy", 1);
+
   // Security middleware
   app.use(
     helmet({
