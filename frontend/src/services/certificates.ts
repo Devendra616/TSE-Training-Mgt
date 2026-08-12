@@ -1,9 +1,13 @@
-import api from './api';
-import type { Training } from './trainings';
-import type { Employee } from './employees';
-import type { Batch } from './batches';
+import api from "./api";
+import type { Training } from "./trainings";
+import type { Employee } from "./employees";
+import type { Batch } from "./batches";
 
-export type WorkflowStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected';
+export type WorkflowStatus =
+  | "draft"
+  | "pending_approval"
+  | "approved"
+  | "rejected";
 
 export interface Certificate {
   id: number;
@@ -34,7 +38,7 @@ export async function getCertificates(params?: {
   trainingId?: number;
   employeeId?: number;
 }): Promise<Certificate[]> {
-  const response = await api.get('/certificates', { params });
+  const response = await api.get("/certificates", { params });
   return response.data.data.certificates;
 }
 
@@ -42,7 +46,7 @@ export async function getCertificates(params?: {
  * Get pending approvals
  */
 export async function getPendingApprovals(): Promise<Certificate[]> {
-  const response = await api.get('/certificates/pending');
+  const response = await api.get("/certificates/pending");
   return response.data.data.certificates;
 }
 
@@ -61,7 +65,7 @@ export async function generateCertificates(batchId: number): Promise<{
   generated: number;
   skipped: { id: number; name: string; reason: string }[];
 }> {
-  const response = await api.post('/certificates/generate', { batchId });
+  const response = await api.post("/certificates/generate", { batchId });
   return response.data.data;
 }
 
@@ -76,8 +80,12 @@ export async function submitForApproval(id: number): Promise<Certificate> {
 /**
  * Bulk submit for approval
  */
-export async function bulkSubmit(certificateIds: number[]): Promise<{ submitted: number }> {
-  const response = await api.post('/certificates/submit-bulk', { certificateIds });
+export async function bulkSubmit(
+  certificateIds: number[],
+): Promise<{ submitted: number }> {
+  const response = await api.post("/certificates/submit-bulk", {
+    certificateIds,
+  });
   return response.data.data;
 }
 
@@ -95,14 +103,19 @@ export async function approveCertificate(id: number): Promise<Certificate> {
 export async function bulkApprove(certificateIds: number[]): Promise<{
   approved: { id: number; certificateNumber: string }[];
 }> {
-  const response = await api.post('/certificates/approve-bulk', { certificateIds });
+  const response = await api.post("/certificates/approve-bulk", {
+    certificateIds,
+  });
   return response.data.data;
 }
 
 /**
  * Reject certificate
  */
-export async function rejectCertificate(id: number, reason: string): Promise<Certificate> {
+export async function rejectCertificate(
+  id: number,
+  reason: string,
+): Promise<Certificate> {
   const response = await api.put(`/certificates/${id}/reject`, { reason });
   return response.data.data.certificate;
 }
@@ -118,7 +131,9 @@ export async function resubmitCertificate(id: number): Promise<Certificate> {
 /**
  * Get employee training history
  */
-export async function getEmployeeHistory(employeeId: number): Promise<Certificate[]> {
+export async function getEmployeeHistory(
+  employeeId: number,
+): Promise<Certificate[]> {
   const response = await api.get(`/certificates/employee/${employeeId}`);
   return response.data.data.certificates;
 }
@@ -126,9 +141,27 @@ export async function getEmployeeHistory(employeeId: number): Promise<Certificat
 /**
  * Download certificate PDF
  */
-export async function downloadCertificatePDF(id: number): Promise<Blob> {
-  const response = await api.get(`/certificates/${id}/pdf`, { responseType: 'blob' });
-  return response.data;
+export async function downloadCertificatePDF(
+  id: number,
+): Promise<{ blob: Blob; filename: string }> {
+  const response = await api.get(`/certificates/${id}/pdf`, {
+    responseType: "blob",
+  });
+
+  const contentDisposition =
+    response.headers["content-disposition"] ||
+    response.headers["Content-Disposition"];
+
+  let filename = `certificate-${id}.pdf`;
+  if (contentDisposition) {
+    const filenameMatch = /filename\*?=([^;\n]+)/i.exec(contentDisposition);
+    if (filenameMatch) {
+      filename = filenameMatch[1].trim();
+      filename = filename.replace(/^(?:UTF-8'')?/, "").replace(/['"\s]/g, "");
+    }
+  }
+
+  return { blob: response.data, filename };
 }
 
 export default {

@@ -42,18 +42,32 @@ export async function generateCertificatePDF(
   const employee = (certificate as any).employee;
   const batch = (certificate as any).batch;
 
+  const batchStart = batch?.startDate
+    ? format(new Date(batch.startDate), "dd MMM yyyy")
+    : "N/A";
+  const batchEnd = batch?.endDate
+    ? format(new Date(batch.endDate), "dd MMM yyyy")
+    : "N/A";
+  const venue = batch?.venue || "N/A";
+  const instructorName = batch?.instructorName || "N/A";
+
+  // Use the model's actual stored certificate number attribute (certNumber) and
+  // fall back to the virtual certificateNumber accessor only if defined.
+  const certificateNumber =
+    certificate.certNumber || (certificate as any).certificateNumber || "DRAFT";
+
   const data: CertificateData = {
-    certificateNumber: (certificate as any).certificateNumber || "DRAFT",
-    employeeName: employee.fullName,
-    employeeSapId: employee.sapId,
-    employeeTokenNo: employee.tokenNo,
-    employeeDesignation: employee.designation,
-    trainingName: training.name,
-    trainingType: training.trainingType,
-    batchDates: `${format(new Date(batch.startDate), "dd MMM yyyy")} - ${format(new Date(batch.endDate), "dd MMM yyyy")}`,
-    venue: batch.venue,
-    instructorName: batch.instructorName,
-    daysAttended: certificate.daysAttended,
+    certificateNumber,
+    employeeName: employee?.fullName || "N/A",
+    employeeSapId: employee?.sapId || "N/A",
+    employeeTokenNo: employee?.tokenNo || null,
+    employeeDesignation: employee?.designation || "N/A",
+    trainingName: training?.name || "N/A",
+    trainingType: training?.trainingType || "N/A",
+    batchDates: `${batchStart} - ${batchEnd}`,
+    venue,
+    instructorName,
+    daysAttended: certificate.daysAttended ?? 0,
     issueDate: certificate.issueDate
       ? format(new Date(certificate.issueDate), "dd MMMM yyyy")
       : "N/A",

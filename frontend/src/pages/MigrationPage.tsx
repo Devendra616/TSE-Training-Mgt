@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Upload,
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import {
   uploadMigrationFile,
+  deleteMigrationFile,
   checkDuplicate,
   migrateCertificate,
   getMigrationStats,
@@ -29,6 +30,8 @@ export function MigrationPage() {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [storedFilename, setStoredFilename] = useState<string | null>(null);
+  const storedFilenameRef = useRef<string | null>(null);
   const [mimeType, setMimeType] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
@@ -64,6 +67,7 @@ export function MigrationPage() {
     mutationFn: uploadMigrationFile,
     onSuccess: (data) => {
       setFileUrl(data.fileUrl);
+      setStoredFilename(data.filename);
       setMimeType(data.mimeType);
     },
   });
@@ -85,30 +89,57 @@ export function MigrationPage() {
     mutationFn: migrateCertificate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["migrationStats"] });
+      storedFilenameRef.current = null;
       // Reset form
       setFormData({ issueDate: format(new Date(), "yyyy-MM-dd") });
       setSelectedEmployee(null);
       setEmployeeSearch("");
       setFile(null);
       setFileUrl(null);
+      setStoredFilename(null);
       setMimeType(null);
       setDuplicateWarning(null);
     },
   });
 
+  const deleteUploadedFile = async (filename: string | null) => {
+    if (!filename) return;
+    try {
+      await deleteMigrationFile(filename);
+    } catch (error) {
+      // Best-effort cleanup; ignore failures.
+      console.warn(
+        "Failed to delete orphaned migration file:",
+        filename,
+        error,
+      );
+    }
+  };
+
+  const handleDiscardFile = async () => {
+    await deleteUploadedFile(storedFilenameRef.current);
+    setFile(null);
+    setFileUrl(null);
+    setStoredFilename(null);
+    storedFilenameRef.current = null;
+    setMimeType(null);
+  };
+
   // Handle file drop
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
+      await deleteUploadedFile(storedFilenameRef.current);
       setFile(droppedFile);
       uploadMutation.mutate(droppedFile);
     }
-  }, []);
+  };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      await deleteUploadedFile(storedFilenameRef.current);
       setFile(selectedFile);
       uploadMutation.mutate(selectedFile);
     }
@@ -142,9 +173,26 @@ export function MigrationPage() {
     }
   };
 
+  useEffect(() => {
+    storedFilenameRef.current = storedFilename;
+  }, [storedFilename]);
+
+  useEffect(() => {
+    return () => {
+      if (storedFilenameRef.current) {
+        deleteUploadedFile(storedFilenameRef.current);
+      }
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee || !formData.trainingId || !formData.issueDate) {
+      return;
+    }
+
+    // Prevent race condition where the user submits before the upload callback finishes.
+    if (file && !storedFilename) {
       return;
     }
 
@@ -154,6 +202,7 @@ export function MigrationPage() {
       trainingId: formData.trainingId,
       issueDate: formData.issueDate,
       sourceFileName: file?.name,
+      certificatePath: storedFilename || undefined,
     } as MigrateCertificateData);
   };
 
@@ -221,10 +270,7 @@ export function MigrationPage() {
                     <span className="text-sm font-medium">{file?.name}</span>
                   </div>
                   <button
-                    onClick={() => {
-                      setFile(null);
-                      setFileUrl(null);
-                    }}
+                    onClick={handleDiscardFile}
                     className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <X className="w-4 h-4" />
@@ -427,11 +473,18 @@ export function MigrationPage() {
                 <Button
                   type="submit"
                   isLoading={migrateMutation.isPending}
-                  disabled={!selectedEmployee || !formData.trainingId}
+                  disabled={
+                    !selectedEmployee ||
+                    !formData.trainingId ||
+                    uploadMutation.isPending ||
+                    (file !== null && !storedFilename)
+                  }
                   className="w-full"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save Certificate
+                  {uploadMutation.isPending
+                    ? "Uploading file..."
+                    : "Save Certificate"}
                 </Button>
                 {migrateMutation.isSuccess && (
                   <p className="text-center text-sm text-green-600 mt-2">

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { body } from "express-validator";
 import {
   uploadMigrationFile,
+  deleteMigrationFile,
   checkDuplicate,
   migrateCertificate,
   bulkMigrate,
@@ -24,6 +25,7 @@ router.use(authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER));
  * @access  Admin, Training Officer
  */
 router.post("/upload", uploadMigrationDocument, uploadMigrationFile);
+router.delete("/upload/:filename", deleteMigrationFile);
 
 /**
  * @route   POST /api/migration/check-duplicate
@@ -54,6 +56,7 @@ router.post(
     body("trainingId").isInt().withMessage("Valid training ID is required"),
     body("issueDate").notEmpty().withMessage("Issue date is required"),
     body("certificateNumber").optional().isString(),
+    body("certificatePath").optional().isString(),
     body("validFrom").optional().isString(),
     body("validUntil").optional().isString(),
     body("daysAttended").optional().isInt({ min: 1 }),

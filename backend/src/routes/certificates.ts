@@ -1,9 +1,10 @@
-import { Router } from 'express';
-import { body, param } from 'express-validator';
+import { Router } from "express";
+import { body, param } from "express-validator";
 import {
   getAllCertificates,
   getPendingApprovals,
   getCertificateById,
+  downloadCertificatePdf,
   generateCertificates,
   submitForApproval,
   bulkSubmitForApproval,
@@ -12,10 +13,10 @@ import {
   rejectCertificate,
   resubmitCertificate,
   getEmployeeHistory,
-} from '../controllers/certificateController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
-import { validateRequest } from '../middleware/validate.js';
-import { UserRole } from '../models/index.js';
+} from "../controllers/certificateController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
+import { validateRequest } from "../middleware/validate.js";
+import { UserRole } from "../models/index.js";
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.use(authenticate);
  * @desc    Get all certificates
  * @access  All authenticated users
  */
-router.get('/', getAllCertificates);
+router.get("/", getAllCertificates);
 
 /**
  * @route   GET /api/certificates/pending
@@ -35,9 +36,9 @@ router.get('/', getAllCertificates);
  * @access  Mines Manager
  */
 router.get(
-  '/pending',
+  "/pending",
   authorize(UserRole.MINES_MANAGER, UserRole.ADMIN),
-  getPendingApprovals
+  getPendingApprovals,
 );
 
 /**
@@ -46,10 +47,22 @@ router.get(
  * @access  All authenticated users
  */
 router.get(
-  '/employee/:employeeId',
-  [param('employeeId').isInt().withMessage('Valid employee ID is required')],
+  "/employee/:employeeId",
+  [param("employeeId").isInt().withMessage("Valid employee ID is required")],
   validateRequest,
-  getEmployeeHistory
+  getEmployeeHistory,
+);
+
+/**
+ * @route   GET /api/certificates/:id/pdf
+ * @desc    Download certificate PDF
+ * @access  All authenticated users
+ */
+router.get(
+  "/:id/pdf",
+  [param("id").isInt().withMessage("Valid certificate ID is required")],
+  validateRequest,
+  downloadCertificatePdf,
 );
 
 /**
@@ -58,10 +71,10 @@ router.get(
  * @access  All authenticated users
  */
 router.get(
-  '/:id',
-  [param('id').isInt().withMessage('Valid certificate ID is required')],
+  "/:id",
+  [param("id").isInt().withMessage("Valid certificate ID is required")],
   validateRequest,
-  getCertificateById
+  getCertificateById,
 );
 
 /**
@@ -70,11 +83,11 @@ router.get(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/generate',
+  "/generate",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
-  [body('batchId').isInt().withMessage('Valid batch ID is required')],
+  [body("batchId").isInt().withMessage("Valid batch ID is required")],
   validateRequest,
-  generateCertificates
+  generateCertificates,
 );
 
 /**
@@ -83,11 +96,11 @@ router.post(
  * @access  Admin, Training Officer
  */
 router.put(
-  '/:id/submit',
+  "/:id/submit",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
-  [param('id').isInt().withMessage('Valid certificate ID is required')],
+  [param("id").isInt().withMessage("Valid certificate ID is required")],
   validateRequest,
-  submitForApproval
+  submitForApproval,
 );
 
 /**
@@ -96,11 +109,15 @@ router.put(
  * @access  Admin, Training Officer
  */
 router.post(
-  '/submit-bulk',
+  "/submit-bulk",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
-  [body('certificateIds').isArray({ min: 1 }).withMessage('Certificate IDs array is required')],
+  [
+    body("certificateIds")
+      .isArray({ min: 1 })
+      .withMessage("Certificate IDs array is required"),
+  ],
   validateRequest,
-  bulkSubmitForApproval
+  bulkSubmitForApproval,
 );
 
 /**
@@ -109,11 +126,11 @@ router.post(
  * @access  Mines Manager only
  */
 router.put(
-  '/:id/approve',
+  "/:id/approve",
   authorize(UserRole.MINES_MANAGER),
-  [param('id').isInt().withMessage('Valid certificate ID is required')],
+  [param("id").isInt().withMessage("Valid certificate ID is required")],
   validateRequest,
-  approveCertificate
+  approveCertificate,
 );
 
 /**
@@ -122,11 +139,15 @@ router.put(
  * @access  Mines Manager only
  */
 router.post(
-  '/approve-bulk',
+  "/approve-bulk",
   authorize(UserRole.MINES_MANAGER),
-  [body('certificateIds').isArray({ min: 1 }).withMessage('Certificate IDs array is required')],
+  [
+    body("certificateIds")
+      .isArray({ min: 1 })
+      .withMessage("Certificate IDs array is required"),
+  ],
   validateRequest,
-  bulkApprove
+  bulkApprove,
 );
 
 /**
@@ -135,14 +156,17 @@ router.post(
  * @access  Mines Manager only
  */
 router.put(
-  '/:id/reject',
+  "/:id/reject",
   authorize(UserRole.MINES_MANAGER),
   [
-    param('id').isInt().withMessage('Valid certificate ID is required'),
-    body('reason').notEmpty().trim().withMessage('Rejection reason is required'),
+    param("id").isInt().withMessage("Valid certificate ID is required"),
+    body("reason")
+      .notEmpty()
+      .trim()
+      .withMessage("Rejection reason is required"),
   ],
   validateRequest,
-  rejectCertificate
+  rejectCertificate,
 );
 
 /**
@@ -151,11 +175,11 @@ router.put(
  * @access  Admin, Training Officer
  */
 router.put(
-  '/:id/resubmit',
+  "/:id/resubmit",
   authorize(UserRole.ADMIN, UserRole.TRAINING_OFFICER),
-  [param('id').isInt().withMessage('Valid certificate ID is required')],
+  [param("id").isInt().withMessage("Valid certificate ID is required")],
   validateRequest,
-  resubmitCertificate
+  resubmitCertificate,
 );
 
 export default router;

@@ -15,6 +15,9 @@ import {
 import { logUserAction } from "../utils/logger.js";
 import { Op } from "sequelize";
 import { addDays, isValid } from "date-fns";
+import fs from "fs";
+import path from "path";
+import config from "../config/index.js";
 
 /**
  * Upload file for migration (PDF/Image)
@@ -42,6 +45,36 @@ export const uploadMigrationFile = asyncHandler(
         mimeType: req.file.mimetype,
       },
     });
+  },
+);
+
+/**
+ * Delete a previously uploaded migration file
+ * DELETE /api/migration/upload/:filename
+ */
+export const deleteMigrationFile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { filename } = req.params;
+    const safeFilename = path.basename(filename);
+    const validFilenameRegex = /^cert-[0-9a-fA-F-]+\.[A-Za-z0-9]{1,10}$/;
+
+    if (!validFilenameRegex.test(safeFilename) || safeFilename !== filename) {
+      throw new ValidationError("Invalid filename");
+    }
+
+    const storedFilePath = path.join(
+      config.upload.certificatesDir,
+      safeFilename,
+    );
+
+    if (fs.existsSync(storedFilePath)) {
+      fs.unlinkSync(storedFilePath);
+      logUserAction(req.user!.id, "delete_migration_file", "migration", 0, {
+        filename: safeFilename,
+      });
+    }
+
+    res.json({ success: true, data: { filename: safeFilename } });
   },
 );
 
@@ -122,8 +155,20 @@ export const migrateCertificate = asyncHandler(
       validUntil,
       daysAttended,
       sourceFileName,
+      certificatePath,
       notes,
     } = req.body;
+
+    logUserAction(
+      req.user!.id,
+      "migrate_certificate_received",
+      "migration",
+      0,
+      {
+        certificatePath,
+      },
+    );
+    // Log incoming certificatePath so production diagnostics can verify the upload path.
 
     // Validate employee
     const employee = await Employee.findByPk(employeeId);
@@ -159,7 +204,24 @@ export const migrateCertificate = asyncHandler(
       ? new Date(validUntil)
       : addDays(finalValidFrom, training.validityDays);
 
-    // Create migrated certificate (directly approved)
+    // Validate uploaded certificate path if provided and normalize to stored filename.
+    // Fix: certificatePath must reference the actual stored file name from uploadMigrationFile,
+    // not the original client-supplied URL or original name.
+    const storedCertificateFilename = certificatePath
+      ? path.basename(certificatePath)
+      : null;
+    if (storedCertificateFilename) {
+      const storedFilePath = path.join(
+        config.upload.certificatesDir,
+        storedCertificateFilename,
+      );
+      if (!fs.existsSync(storedFilePath)) {
+        throw new ValidationError(
+          "Referenced certificate file does not exist on server, please re-upload",
+        );
+      }
+    }
+
     const certificate = await Certificate.create({
       employeeId,
       trainingId,
@@ -167,6 +229,7 @@ export const migrateCertificate = asyncHandler(
       workflowStatus: WorkflowStatus.APPROVED, // Migrated = already approved
       attendanceStatus: AttendanceStatus.PRESENT,
       certNumber: certificateNumber || null,
+      certificatePath: storedCertificateFilename,
       daysAttended: daysAttended || training.durationDays,
       issueDate: parsedIssueDate,
       validFrom: finalValidFrom,
@@ -254,6 +317,23 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
         ? new Date(cert.validUntil)
         : addDays(finalValidFrom, training.validityDays);
 
+      // Validate uploaded certificate path if provided and normalize to stored filename.
+      // Fix: certificatePath for bulk migration must point to the actual stored disk filename.
+      const storedCertificateFilename = cert.certificatePath
+        ? path.basename(cert.certificatePath)
+        : null;
+      if (storedCertificateFilename) {
+        const storedFilePath = path.join(
+          config.upload.certificatesDir,
+          storedCertificateFilename,
+        );
+        if (!fs.existsSync(storedFilePath)) {
+          throw new Error(
+            "Referenced certificate file does not exist on server, please re-upload",
+          );
+        }
+      }
+
       await Certificate.create({
         employeeId: cert.employeeId,
         trainingId: cert.trainingId,
@@ -261,6 +341,7 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
         workflowStatus: WorkflowStatus.APPROVED,
         attendanceStatus: AttendanceStatus.PRESENT,
         certNumber: cert.certificateNumber || null,
+        certificatePath: storedCertificateFilename,
         daysAttended: cert.daysAttended || training.durationDays,
         issueDate: parsedIssueDate,
         validFrom: finalValidFrom,
@@ -271,6 +352,8 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
         approvalAt: new Date(),
         approvedBy: req.user!.id,
         createdBy: req.user!.id,
+        notes:
+          [cert.notes, cert.sourceFileName].filter(Boolean).join(" | ") || null,
       });
 
       results.success++;

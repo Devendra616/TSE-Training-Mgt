@@ -10,6 +10,7 @@ import { connectDatabase } from "./config/database.js";
 import { getRedisClient } from "./config/redis.js";
 import { logger } from "./utils/logger.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { scheduleOrphanedMigrationFileCleanup } from "./jobs/cleanupOrphanedMigrationFiles.js";
 
 // Import models to initialize associations
 import "./models/index.js";
@@ -91,6 +92,8 @@ async function startServer(): Promise<void> {
 
     // Create and start Express app
     const app = createApp();
+
+    scheduleOrphanedMigrationFileCleanup();
 
     app.listen(config.port, () => {
       logger.info(

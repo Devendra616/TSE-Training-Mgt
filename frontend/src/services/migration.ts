@@ -24,6 +24,7 @@ export interface MigrateCertificateData {
   validUntil?: string;
   daysAttended?: number;
   sourceFileName?: string;
+  certificatePath?: string;
   notes?: string;
 }
 
@@ -41,6 +42,16 @@ export async function uploadMigrationFile(file: File): Promise<{
   const response = await api.post("/migration/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return response.data.data;
+}
+
+/**
+ * Delete a previously uploaded migration file
+ */
+export async function deleteMigrationFile(
+  filename: string,
+): Promise<{ filename: string }> {
+  const response = await api.delete(`/migration/upload/${filename}`);
   return response.data.data;
 }
 
