@@ -10,6 +10,7 @@ import {
   Save,
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -25,6 +26,25 @@ import { getBackendAssetUrl } from "@/services/api";
 import { searchEmployees, type Employee } from "@/services/employees";
 import { getTrainings } from "@/services/trainings";
 import { formatSapIdWithToken } from "@/utils/employeeDisplay";
+
+const getInclusiveDayDifference = (startDate: string, endDate: string) => {
+  if (!startDate || !endDate) return null;
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null;
+  }
+
+  if (end < start) {
+    return null;
+  }
+
+  const diffInDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+  return Math.floor(diffInDays) + 1;
+};
 
 export function MigrationPage() {
   const queryClient = useQueryClient();
@@ -70,6 +90,19 @@ export function MigrationPage() {
       setStoredFilename(data.filename);
       setMimeType(data.mimeType);
     },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        "File upload failed.";
+
+      toast.error(message);
+      setFile(null);
+      setFileUrl(null);
+      setStoredFilename(null);
+      storedFilenameRef.current = null;
+      setMimeType(null);
+    },
   });
 
   // Check duplicate mutation
@@ -88,6 +121,7 @@ export function MigrationPage() {
   const migrateMutation = useMutation({
     mutationFn: migrateCertificate,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["certificates"] });
       queryClient.invalidateQueries({ queryKey: ["migrationStats"] });
       storedFilenameRef.current = null;
       // Reset form
@@ -142,6 +176,7 @@ export function MigrationPage() {
       await deleteUploadedFile(storedFilenameRef.current);
       setFile(selectedFile);
       uploadMutation.mutate(selectedFile);
+      e.target.value = "";
     }
   };
 
@@ -156,6 +191,7 @@ export function MigrationPage() {
         employeeId: employee.id,
         trainingId: formData.trainingId,
         issueDate: formData.issueDate,
+        certificateNumber: formData.certificateNumber?.trim(),
       });
     }
   };
@@ -169,9 +205,55 @@ export function MigrationPage() {
         employeeId: selectedEmployee.id,
         trainingId,
         issueDate: formData.issueDate,
+        certificateNumber: formData.certificateNumber?.trim(),
       });
     }
   };
+
+  useEffect(() => {
+    if (!selectedEmployee || !formData.trainingId || !formData.issueDate) {
+      return;
+    }
+
+    const certificateNumber = formData.certificateNumber?.trim();
+    checkDuplicateMutation.mutate({
+      employeeId: selectedEmployee.id,
+      trainingId: formData.trainingId,
+      issueDate: formData.issueDate,
+      ...(certificateNumber ? { certificateNumber } : {}),
+    });
+  }, [
+    selectedEmployee,
+    formData.trainingId,
+    formData.issueDate,
+    formData.certificateNumber,
+  ]);
+
+  useEffect(() => {
+    if (!formData.validFrom || !formData.validUntil) {
+      return;
+    }
+
+    const calculatedDays = getInclusiveDayDifference(
+      formData.validFrom,
+      formData.validUntil,
+    );
+
+    if (calculatedDays === null) {
+      return;
+    }
+
+    setFormData((current) => {
+      if (current.daysAttended === calculatedDays) {
+        return current;
+      }
+
+      return {
+        ...current,
+        daysAttended: calculatedDays,
+      };
+    });
+  }, [formData.validFrom, formData.validUntil]);
 
   useEffect(() => {
     storedFilenameRef.current = storedFilename;
@@ -196,11 +278,18 @@ export function MigrationPage() {
       return;
     }
 
+    const autoCalculatedDaysAttended =
+      formData.validFrom && formData.validUntil
+        ? getInclusiveDayDifference(formData.validFrom, formData.validUntil)
+        : null;
+
     migrateMutation.mutate({
       ...formData,
       employeeId: selectedEmployee.id,
       trainingId: formData.trainingId,
       issueDate: formData.issueDate,
+      daysAttended:
+        autoCalculatedDaysAttended ?? formData.daysAttended ?? undefined,
       sourceFileName: file?.name,
       certificatePath: storedFilename || undefined,
     } as MigrateCertificateData);
@@ -421,11 +510,14 @@ export function MigrationPage() {
                   label="Days Attended"
                   type="number"
                   min={1}
-                  value={formData.daysAttended || ""}
+                  value={formData.daysAttended ?? ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      daysAttended: Number(e.target.value),
+                      daysAttended:
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value),
                     })
                   }
                 />
@@ -436,18 +528,48 @@ export function MigrationPage() {
                   label="Start Date *"
                   type="date"
                   value={formData.validFrom || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, validFrom: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData((current) => {
+                      const next = { ...current, validFrom: e.target.value };
+
+                      if (next.validFrom && next.validUntil) {
+                        const calculatedDays = getInclusiveDayDifference(
+                          next.validFrom,
+                          next.validUntil,
+                        );
+
+                        if (calculatedDays !== null) {
+                          next.daysAttended = calculatedDays;
+                        }
+                      }
+
+                      return next;
+                    });
+                  }}
                   required
                 />
                 <Input
                   label="End Date *"
                   type="date"
                   value={formData.validUntil || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, validUntil: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData((current) => {
+                      const next = { ...current, validUntil: e.target.value };
+
+                      if (next.validFrom && next.validUntil) {
+                        const calculatedDays = getInclusiveDayDifference(
+                          next.validFrom,
+                          next.validUntil,
+                        );
+
+                        if (calculatedDays !== null) {
+                          next.daysAttended = calculatedDays;
+                        }
+                      }
+
+                      return next;
+                    });
+                  }}
                   required
                 />
               </div>

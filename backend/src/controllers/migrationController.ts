@@ -19,6 +19,13 @@ import fs from "fs";
 import path from "path";
 import config from "../config/index.js";
 
+const normalizeCertificateNumber = (value?: string | null): string | null => {
+  if (typeof value !== "string") return null;
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
 /**
  * Upload file for migration (PDF/Image)
  * POST /api/migration/upload
@@ -85,11 +92,13 @@ export const deleteMigrationFile = asyncHandler(
 export const checkDuplicate = asyncHandler(
   async (req: Request, res: Response) => {
     const { employeeId, trainingId, issueDate, certificateNumber } = req.body;
+    const normalizedCertificateNumber =
+      normalizeCertificateNumber(certificateNumber);
 
     // Check by certificate number if provided
-    if (certificateNumber) {
+    if (normalizedCertificateNumber) {
       const existing = await Certificate.findOne({
-        where: { certNumber: certificateNumber },
+        where: { certNumber: { [Op.iLike]: normalizedCertificateNumber } },
       });
 
       if (existing) {
@@ -158,6 +167,8 @@ export const migrateCertificate = asyncHandler(
       certificatePath,
       notes,
     } = req.body;
+    const normalizedCertificateNumber =
+      normalizeCertificateNumber(certificateNumber);
 
     logUserAction(
       req.user!.id,
@@ -183,9 +194,9 @@ export const migrateCertificate = asyncHandler(
     }
 
     // Check for duplicate
-    if (certificateNumber) {
+    if (normalizedCertificateNumber) {
       const existing = await Certificate.findOne({
-        where: { certNumber: certificateNumber },
+        where: { certNumber: { [Op.iLike]: normalizedCertificateNumber } },
       });
       if (existing) {
         throw new ConflictError("Certificate number already exists");
@@ -228,7 +239,7 @@ export const migrateCertificate = asyncHandler(
       batchId: null as number | null, // No batch for migrated certificates
       workflowStatus: WorkflowStatus.APPROVED, // Migrated = already approved
       attendanceStatus: AttendanceStatus.PRESENT,
-      certNumber: certificateNumber || null,
+      certNumber: normalizedCertificateNumber || null,
       certificatePath: storedCertificateFilename,
       daysAttended: daysAttended || training.durationDays,
       issueDate: parsedIssueDate,
@@ -296,9 +307,15 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
       }
 
       // Check duplicate
-      if (cert.certificateNumber) {
+      const normalizedBulkCertificateNumber = normalizeCertificateNumber(
+        cert.certificateNumber,
+      );
+
+      if (normalizedBulkCertificateNumber) {
         const existing = await Certificate.findOne({
-          where: { certNumber: cert.certificateNumber },
+          where: {
+            certNumber: { [Op.iLike]: normalizedBulkCertificateNumber },
+          },
         });
         if (existing) {
           throw new Error("Certificate number already exists");
@@ -340,7 +357,7 @@ export const bulkMigrate = asyncHandler(async (req: Request, res: Response) => {
         batchId: null as number | null as number | null,
         workflowStatus: WorkflowStatus.APPROVED,
         attendanceStatus: AttendanceStatus.PRESENT,
-        certNumber: cert.certificateNumber || null,
+        certNumber: normalizedBulkCertificateNumber || null,
         certificatePath: storedCertificateFilename,
         daysAttended: cert.daysAttended || training.durationDays,
         issueDate: parsedIssueDate,
